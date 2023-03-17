@@ -1,7 +1,7 @@
 ---
 slug: long-blog-post
 title: Long Blog Post
-authors: dodalovicgran
+authors: gglazewskigran
 tags: [hello, docusaurus]
 ---
 
