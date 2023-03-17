@@ -1,7 +1,7 @@
 ---
 slug: first-blog-post
 title: First Blog Post
-authors: [dodalovicgran]
+authors: dodalovicgran
 tags: [hola, docusaurus]
 description: This is the first blog post on our site
 ---
