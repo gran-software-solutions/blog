@@ -9,8 +9,8 @@ const projectName = 'blog';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-    title: 'GRAN Software Solutions REST API Guidelines',
-    tagline: 'We believe that REST API is the way to go',
+    title: 'GRAN Software Solutions Blog',
+    tagline: 'Blog',
     favicon: 'img/favicon.ico',
 
     // Set the production url of your site here
