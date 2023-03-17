@@ -130,6 +130,7 @@ const config = {
             ({
                 hashed: true,
                 indexBlog: true,
+                blogRouteBasePath: "/",
                 language: ["en"],
                 highlightSearchTermsOnTargetPage: true,
                 explicitSearchResultPath: true,
