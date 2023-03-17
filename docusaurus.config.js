@@ -117,7 +117,7 @@ const config = {
                 copyright: `Copyright © ${new Date().getFullYear()} GRAN Software Solutions GmbH. Built with Docusaurus.`,
             },
             prism: {
-                additionalLanguages: ['yaml', 'http', 'json'],
+                additionalLanguages: ['yaml', 'http', 'json', 'kotlin'],
                 theme: require('prism-react-renderer/themes/palenight'),
                 darkTheme: require('prism-react-renderer/themes/palenight'),
             },
