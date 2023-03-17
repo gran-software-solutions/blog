@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://gran-software-solutions.github.io/blog/</id>
-    <title>GRAN Software Solutions REST API Guidelines Blog</title>
+    <title>GRAN Software Solutions Blog Blog</title>
     <updated>2021-08-01T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://gran-software-solutions.github.io/blog/"/>
-    <subtitle>GRAN Software Solutions REST API Guidelines Blog</subtitle>
+    <subtitle>GRAN Software Solutions Blog Blog</subtitle>
     <icon>https://gran-software-solutions.github.io/blog/img/favicon.ico</icon>
     <entry>
         <title type="html"><![CDATA[MDX Blog Post]]></title>

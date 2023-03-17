@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/">
     <channel>
-        <title>GRAN Software Solutions REST API Guidelines Blog</title>
+        <title>GRAN Software Solutions Blog Blog</title>
         <link>https://gran-software-solutions.github.io/blog/</link>
-        <description>GRAN Software Solutions REST API Guidelines Blog</description>
+        <description>GRAN Software Solutions Blog Blog</description>
         <lastBuildDate>Sun, 01 Aug 2021 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
