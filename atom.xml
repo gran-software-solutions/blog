@@ -42,8 +42,8 @@
         <summary type="html"><![CDATA[This is the first blog post on our site]]></summary>
         <content type="html"><![CDATA[<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum dignissim ultricies. Fusce rhoncus ipsum tempor eros aliquam consequat. Lorem ipsum dolor sit amet</p>]]></content>
         <author>
-            <name>dodalovicgran</name>
-            <uri>https://github.com/wgao19</uri>
+            <name>Dusan Odalovic</name>
+            <uri>https://github.com/dodalovicgran</uri>
         </author>
         <category label="hola" term="hola"/>
         <category label="docusaurus" term="docusaurus"/>
