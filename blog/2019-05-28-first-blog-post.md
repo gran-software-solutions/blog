@@ -1,11 +1,7 @@
 ---
 slug: first-blog-post
 title: First Blog Post
-authors:
-  name: dodalovicgran
-  title: Docusaurus Core Team
-  url: https://github.com/wgao19
-  image_url: https://github.com/wgao19.png
+authors: [dodalovicgran]
 tags: [hola, docusaurus]
 description: This is the first blog post on our site
 ---
