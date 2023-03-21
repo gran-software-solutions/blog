@@ -9,6 +9,9 @@ const projectName = 'blog';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
+    markdown: {
+        mermaid: true,
+    },
     title: 'GRAN Software Solutions Blog',
     tagline: 'Blog',
     favicon: 'img/favicon.ico',
@@ -136,6 +139,7 @@ const config = {
                 explicitSearchResultPath: true,
             }),
         ],
+        '@docusaurus/theme-mermaid'
     ],
 };
 
