@@ -15,7 +15,7 @@ We also provided [a sample code](#sample-code) which you can use to implement th
 ## What's the problem to solve?
 
 The issue we want to tackle can also be described as "lost updates". When do such updates happen? When the same resources are attempted to be updated by multiple clients at the same time.
-What happens in such cases, if you don't have any special handling? The last update wins. The first update is lost.
+What happens in such cases, if you don't have any special handling? **The last update wins**.
 
 Depending on the use case, this may or may not be a problem.
 
@@ -25,6 +25,13 @@ In case you want more predictable behavior, so that the end state is not determi
 
 ETag can be described as a fingerprint of a resource. It's a unique identifier that is generated based on the content of the resource. If the content changes, the ETag changes as well.
 ETag is used for caching purposes, as well as for concurrency control, which is our use case.
+
+:::tip Weak vs Strong ETags
+
+ETags can be either **strong** or **weak**. Strong ETags guarantee byte-for-byte equality. They are more expensive to generate. Weak ETags only guarantee that the content is semantically equal.
+
+For our use case, we will use weak ETags.
+:::
 
 :::info `ETag` vs `Last-Modified`
 `Last-Modified` header is another way to handle caching/concurrency. How does it work? When we fetch a resource from the server, we get a `Last-Modified` header in the response. This header contains the **date
@@ -37,6 +44,8 @@ able to distinguish between the updates.
 
 ## Real-world example
 
+If we have no special handling of concurrent requests, this leads to **"lost updates"** problem. This means that the later request overwrites the changes made by the earlier requests, making them "lost".
+
 Let's demonstrate the problem of lost updates with an example. Let's, for a moment, pretend there's no such thing as Google Docs or similar collaborative editing tools.
 Our boss comes to us and says:
 
@@ -44,15 +53,15 @@ Our boss comes to us and says:
 
 With all the time in the world, we came up with the following design:
 
-* This **will not be** a real-time collaboration
+* This **will not be** a real-time collaboration where we can see the changes as they happen
 * A user will only be able to update the document if the document is based on the **latest version of the document**
 
-The business was happy with the design, so we started implementing it.
+The business was happy with the design proposal, so we started implementing it.
 
 ### The user experience
 
 After we finished the implementation, we tested it, by inviting 2 of our colleagues (Jeannie and Frank) to test it out.
-Let's see what happened:
+The following is a timeline of Jeanie and Frank's actions and the results:
 
 ![Action sequence](./action-sequence.png)
 
@@ -60,7 +69,13 @@ Our boss was fine with the results!
 
 ## Design & Implementation
 
-TODO
+To be able to achieve such user experience, we came up with the following API design:
+
+* We will use **weak ETags** to handle concurrency
+* We will need the following endpoints:
+  * `PUT /documents/{documentId}` - to save the document
+    This is going to either create a new document or update an existing one.
+  * `GET /documents/{documentId}` - to get the document
 
 ## Sample code
 
