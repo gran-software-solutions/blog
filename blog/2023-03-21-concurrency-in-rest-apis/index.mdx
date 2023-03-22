@@ -31,6 +31,8 @@ ETag is used for caching purposes, as well as for concurrency control, which is 
 ETags can be either **strong** or **weak**. Strong ETags guarantee byte-for-byte equality. They are more expensive to generate. Weak ETags only guarantee that the content is semantically equal.
 
 For our use case, we will use weak ETags.
+
+The format of a weak ETag is `W/"ETAG_HERE"`. The `W/` prefix indicates that the ETag is weak.
 :::
 
 :::info `ETag` vs `Last-Modified`
