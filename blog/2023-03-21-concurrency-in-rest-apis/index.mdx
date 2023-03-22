@@ -8,7 +8,7 @@ tags: [REST API]
 
 In this article, we will show you how to design and implement a REST API that can handle concurrent requests when updating the same resource.
 
-We also provided [a sample code](#sample-code) which you can use to implement the described solution.
+We also provided <u>[a sample code](#sample-code)</u> which you can use to implement the described solution.
 
 <!--truncate-->
 
@@ -140,7 +140,7 @@ Requirements for this sequence are described in the [RFC 7232](https://www.rfc-e
 ### Getting a document
 
 Getting a document is far simpler. Using standard `GET` HTTP method, we will return the document with the provided `documentId`. If there's no document with the provided `documentId`,
- we will return `404 Not Found`.
+we will return `404 Not Found`.
 
 The following is a sequence diagram of how the API operation was implemented:
 
@@ -166,11 +166,46 @@ sequenceDiagram
 
 ## Sample code
 
-You can find a sample code showing how to implement a concurrent REST API on our [GitHub](https://github.com/gran-software-solutions/code-samples/tree/main/concurrency-in-rest-apis)
+On our <u>[GitHub](https://github.com/gran-software-solutions/code-samples/tree/main/concurrency-in-rest-apis)</u> we've published a sample project that implements the described API. Here's how you can run it:
 
-## Conclusion
+* Clone the repository
+* Run the following command in the root of the project:
+  ```shell
+  cd concurrency-in-rest-apis
+  ./gradlew run
+  ```
+* This will start the server on port `8888`
+* Open another shell to run the commands to test the API
+* Create a new document with id `7051d73e-9e82-44ca-a0d9-eb8af23b9cf6`
+   ```shell
+   curl -i -X PUT \
+      -H "Content-Type: text/plain" \
+      -d 'some content' \
+      http://localhost:8888/documents/7051d73e-9e82-44ca-a0d9-eb8af23b9cf6
+   ```
+* Get the document with id `7051d73e-9e82-44ca-a0d9-eb8af23b9cf6`
+  ```shell
+  curl -i \
+    http://localhost:8888/documents/7051d73e-9e82-44ca-a0d9-eb8af23b9cf6
+  ```
+* In the response, you will see the `ETag` header. It will look something like this: `ETag: W/"XXXYYYZZZ"`. Copy the value of the header.
+* Update the document with id `7051d73e-9e82-44ca-a0d9-eb8af23b9cf6`
+  ```shell
+  curl -i -X PUT \
+    -H "Content-Type: text/plain" \
+    -H 'If-Match: W/"XXXYYYZZZ"' \
+    -d 'some new content' \
+    http://localhost:8888/documents/7051d73e-9e82-44ca-a0d9-eb8af23b9cf6
+  ```
+* Repeat the previous command. You will see that the API returns `412 Precondition Failed` because the `ETag` header doesn't match the document's ETag.
+* Repeat the previous command, this time without the `If-Match` header. You will see that the API returns `428 Precondition Required` because the `If-Match` header is missing.
 
-ETags are a great tool when it comes to handling concurrent requests predictably.
+## What now?
+
+There are some things you can check on your own projects:
+
+* Do you have use-cases where your APIs try to mutate the same resource at the same time? To avoid hard times troubleshooting concurrency issues, think about if ETags or at least `If-Unmodified-Since` headers would be a good fit for your use-case.
+* You can leverage ETags even to implement caching. If you have a read-heavy API and resources expensive to compute, ETags can come in handy
 
 [^1]: [ETag](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag)
-[^2]:  [If-Unmodified-Since](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Unmodified-Since)
+[^2]: [If-Unmodified-Since](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Unmodified-Since)
