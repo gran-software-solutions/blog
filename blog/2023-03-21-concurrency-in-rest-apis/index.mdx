@@ -155,7 +155,7 @@ sequenceDiagram
     A->>+RC: pathParam("id")
     RC-->>-A: documentId
     A->>+DS: get(documentId)
-    DS-->-A: document
+    DS-->>-A: document
     alt document == null
         A-->>U: HTTP 404
     else
@@ -172,5 +172,5 @@ You can find a sample code showing how to implement a concurrent REST API on our
 
 ETags are a great tool when it comes to handling concurrent requests predictably.
 
-[^1]   [ETag](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag)
-[^2]   [If-Unmodified-Since](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Unmodified-Since)
+[^1]: [ETag](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag)
+[^2]:  [If-Unmodified-Since](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Unmodified-Since)
