@@ -84,56 +84,22 @@ Clients are allowed to set the `documentId`.
 The following is a sequence diagram of how the API operation was implemented:
 
 ```mermaid
-sequenceDiagram
-    participant U as User
-    participant A as API
-    participant RC as RoutingContext
-    participant DS as DataStore
-
-    U->>+A: saveDocument
-    A->>+RC: body()
-    RC-->>-A: bodyContent
-    alt bodyContent empty
-        A-->>U: HTTP 400
-    else bodyContent provided
-        A->>+RC: pathParam("id")
-        RC-->>-A: documentId
-        A->>+DS: get(documentId)
-        DS-->-A: document
-        alt document == null
-            A->>DS: put(documentId, bodyContent, Instant.now())
-            A-->>U: HTTP 204
-        else
-            A->>+RC: request().getHeader("If-Match")
-            RC-->>-A: requestETag
-            alt requestETag missing
-                A-->>U: HTTP 428
-            else
-                alt requestETag != document.etag
-                    A-->>U: HTTP 412
-                else
-                    A->>DS: put(documentId, bodyContent, Instant.now())
-                    A-->>-U: HTTP 204
-                end
-            end
-        end
-    end
+flowchart TD
+    A[Start] --> B{Request body present?}
+    B -- Yes --> C[Get documentID path param]
+    C --> D[Get document from DB by documentID]
+    D --> E{Document exists?}
+    E -- No --> F[Save new document]
+    F --> G[HTTP 204]
+    E -- Yes --> H[Get If-Match header value from request]
+    H --> I{Value missing?}
+    I -- Yes --> J[HTTP 428 - Precondition required]
+    I -- No --> K{Request ETag == document Etag?}
+    K -- Yes --> L[Update document]
+    L --> G
+    K -- No -->  N[HTTP 412 -Precondition failed]
+    B -- No ----> O[HTTP 400 - Bad request]
 ```
-
-For those of you who prefer it using plain English, here's the description of the sequence diagram:
-
-1. The user sends a `PUT` request to the API
-2. The API gets the request body
-3. If the request body is empty, the API returns `400 Bad Request`
-4. If the request body is not empty, the API gets the `documentId` from the path parameters
-5. The API gets the document from the data store
-6. If the document is not found, the API creates a new document with the provided `documentId` and `bodyContent`
-7. If the document is found, the API gets the `If-Match` header from the request
-8. If the `If-Match` header is missing, the API returns `428 Precondition Required`
-9. If the `If-Match` header is present, the API compares it with the document's ETag
-10. If the ETags don't match, the API returns `412 Precondition Failed`
-11. If the ETags match, the API updates the document with the provided `bodyContent`
-12. The API returns `204 No Content`
 
 :::tip
 Requirements for this sequence are described in the [RFC 7232](https://www.rfc-editor.org/rfc/rfc7232#section-5)
@@ -147,24 +113,13 @@ we will return `404 Not Found`.
 The following is a sequence diagram of how the API operation was implemented:
 
 ```mermaid
-sequenceDiagram
-    participant U as User
-    participant A as API
-    participant RC as RoutingContext
-    participant DS as DataStore
-
-    U->>+A: getDocument
-    A->>+RC: pathParam("id")
-    RC-->>-A: documentId
-    A->>+DS: get(documentId)
-    DS-->>-A: document
-    alt document == null
-        A-->>U: HTTP 404
-    else
-        A-->>U: HTTP 200
-    end
+flowchart TD
+    A[Start] --> B[Get documentID path param]
+    B --> C[Get document from DB by documentID]
+    C --> D{Document exists?}
+    D -- No --> E[HTTP 404]
+    D -- Yes --> F[HTTP 200]
 ```
-
 
 ## Sample code
 
