@@ -26,23 +26,25 @@ In case you want more predictable behavior, so that the end state is not determi
 ETag can be described as a fingerprint of a resource. It's a unique identifier that is generated based on the content of the resource. If the content changes, the ETag changes as well.
 ETag is used for caching purposes, as well as for concurrency control, which is our use case.
 
-:::tip Weak vs Strong ETags
+### Weak vs Strong ETags
 
 ETags can be either **strong** or **weak**. Strong ETags guarantee byte-for-byte equality. They are more expensive to generate. Weak ETags only guarantee that the content is semantically equal.
 
 For our use case, we will use weak ETags.
 
 The format of a weak ETag is `W/"ETAG_HERE"`. The `W/` prefix indicates that the ETag is weak.
-:::
 
-:::info `ETag` vs `Last-Modified`
+<details>
+<summary><code>ETag</code> vs <code>Last-Modified</code></summary>
+
 `Last-Modified` header is another way to handle caching/concurrency. How does it work? When we fetch a resource from the server, we get a `Last-Modified` header in the response. This header contains the **date
 and time when the resource was last modified**. When we want to update the resource, we send the `If-Unmodified-Since` header[^2] in the request. The server will check if the resource was modified after the date and
 time specified in the header. If it was, the update will be rejected with `412 Precondition Failed` response. If it wasn't, the server will proceed with handling the request.
 
 The issue with this approach is its precision. The `Last-Modified` header is only precise to the second. If the resource is updated multiple times in the same second, the `If-Unmodified-Since` header will not be
 able to distinguish between the updates.
-:::
+
+</details>
 
 ## Real-world example
 
