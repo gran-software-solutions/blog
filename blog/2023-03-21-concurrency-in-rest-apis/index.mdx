@@ -72,10 +72,53 @@ Our boss was fine with the results!
 To be able to achieve such user experience, we came up with the following API design:
 
 * We will use **weak ETags** to handle concurrency
-* We will need the following endpoints:
-  * `PUT /documents/{documentId}` - to save the document
-    This is going to either create a new document or update an existing one.
-  * `GET /documents/{documentId}` - to get the document
+* We will need 2 API operations, one to **save** and one to **get** a document
+
+### Saving a document
+
+We designed saving a document so that it will use an idempotent `PUT` HTTP method. This method will be used to create a new document, as well as to update an existing one.
+Clients are allowed to set the `documentId`.
+
+The following is a sequence diagram of how the API operation was implemented:
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant A as API
+    participant RC as RoutingContext
+    participant DS as DataStore
+
+    U->>+A: saveDocument
+    A->>+RC: body()
+    RC-->>-A: bodyContent
+    alt bodyContent empty
+        A-->>U: HTTP 400
+    else bodyContent provided
+        A->>+RC: pathParam("id")
+        RC-->>-A: documentId
+        A->>+DS: get(documentId)
+        DS-->-A: document
+        alt document == null
+            A->>DS: put(documentId, bodyContent, Instant.now())
+            A-->>U: HTTP 204
+        else
+            A->>+RC: request().getHeader("If-Match")
+            RC-->>-A: requestETag
+            alt requestETag missing
+                A-->>U: HTTP 428
+            else
+                alt requestETag != document.etag
+                    A-->>U: HTTP 412
+                else
+                    A->>DS: put(documentId, bodyContent, Instant.now())
+                    A-->>-U: HTTP 204
+                end
+            end
+        end
+    end
+```
+
+### Getting a document
 
 ## Sample code
 

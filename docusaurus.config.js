@@ -129,6 +129,9 @@ const config = {
                 theme: require('prism-react-renderer/themes/palenight'),
                 darkTheme: require('prism-react-renderer/themes/palenight'),
             },
+            mermaid: {
+                theme: {light: 'forest', dark: 'dark'},
+            }
         }),
     plugins: [require.resolve("docusaurus-plugin-image-zoom")],
     themes: [
