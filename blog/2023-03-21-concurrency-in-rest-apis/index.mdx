@@ -87,7 +87,7 @@ The following is a sequence diagram of how the API operation was implemented:
 
 ```mermaid
 flowchart TD
-    A[Start] --> B{Request body present?}
+    A([Start]) --> B{Request body present?}
     B -- Yes --> C[Get documentID path param]
     C --> D[Get document from DB by documentID]
     D --> E{Document exists?}
@@ -116,7 +116,7 @@ The following is a sequence diagram of how the API operation was implemented:
 
 ```mermaid
 flowchart TD
-    A[Start] --> B[Get documentID path param]
+    A([Start]) --> B[Get documentID path param]
     B --> C[Get document from DB by documentID]
     C --> D{Document exists?}
     D -- No --> E[HTTP 404]
