@@ -37,7 +37,7 @@ The format of a weak ETag is `W/"ETAG_HERE"`. The `W/` prefix indicates that the
 <details>
 <summary><code>ETag</code> vs <code>Last-Modified</code></summary>
 
-`Last-Modified` header is another way to handle caching/concurrency. How does it work? When we fetch a resource from the server, we get a `Last-Modified` header in the response. This header contains the **date
+`Last-Modified` <u>[HTTP response header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Last-Modified)</u> is another way to handle caching/concurrency. How does it work? When we fetch a resource from the server, we get a `Last-Modified` header in the response. This header contains the **date
 and time when the resource was last modified**. When we want to update the resource, we send the `If-Unmodified-Since` header[^2] in the request. The server will check if the resource was modified after the date and
 time specified in the header. If it was, the update will be rejected with `412 Precondition Failed` response. If it wasn't, the server will proceed with handling the request.
 
