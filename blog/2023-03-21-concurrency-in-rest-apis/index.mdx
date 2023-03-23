@@ -92,15 +92,15 @@ flowchart TD
     C --> D[Get document from DB by documentID]
     D --> E{Document exists?}
     E -- No --> F[Save new document]
-    F --> G[HTTP 204]
+    F --> G([HTTP 204])
     E -- Yes --> H[Get If-Match header value from request]
     H --> I{Value missing?}
-    I -- Yes --> J[HTTP 428 - Precondition required]
+    I -- Yes --> J([HTTP 428 - Precondition required])
     I -- No --> K{Request ETag == document Etag?}
     K -- Yes --> L[Update document]
     L --> G
-    K -- No -->  N[HTTP 412 -Precondition failed]
-    B -- No ----> O[HTTP 400 - Bad request]
+    K -- No -->  N([HTTP 412 -Precondition failed])
+    B -- No ----> O([HTTP 400 - Bad request])
 ```
 
 :::tip
@@ -119,8 +119,8 @@ flowchart TD
     A([Start]) --> B[Get documentID path param]
     B --> C[Get document from DB by documentID]
     C --> D{Document exists?}
-    D -- No --> E[HTTP 404]
-    D -- Yes --> F[HTTP 200]
+    D -- No --> E([HTTP 404])
+    D -- Yes --> F([HTTP 200])
 ```
 
 ## Sample code
