@@ -116,11 +116,10 @@ The following is a sequence diagram of how the API operation was implemented:
 
 ```mermaid
 flowchart TD
-    A([Start]) --> B[Get documentID path param]
-    B --> C[Get document from DB by documentID]
-    C --> D{Document exists?}
-    D -- No --> E([HTTP 404])
-    D -- Yes --> F([HTTP 200])
+    A([Start]) --> B[Resolve document by provided documentID]
+    B --> C{Document exists?}
+    C -- No --> D([HTTP 404])
+    C -- Yes --> E([HTTP 200])
 ```
 
 ## Sample code
