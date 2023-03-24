@@ -8,7 +8,7 @@ tags: [REST API]
 
 In this article, we will show you how to design and implement a REST API that can handle concurrent requests when updating the same resource.
 
-We also provided <u>[a sample code](#sample-code)</u> which demonstrates how to implement this in a real-world-like scenario of Wiki page
+We also provided <u>[a sample code](#sample-code)</u> that demonstrates how to implement this in a real-world-like scenario of Wiki page
 management API.
 
 <!--truncate-->
@@ -50,7 +50,7 @@ How's that? Let's read on.
 ## Optimistic locking - the solution to "lost updates"
 
 You may have noticed that some software you used in the past had a mechanism to prevent "lost updates". Let's take a Wiki as an example.
-As a Wiki page is shared among your teammates, and as writing a Wiki page is a collaborative effort, and additionally takes a while to write,,
+As a Wiki page is shared among your teammates, and as writing a Wiki page is a collaborative effort, and additionally takes a while to write,
 the chances are that someone else may have updated the page as of the time you were writing your changes.
 
 Usually such tools will let you know that you need to sync your changes with the latest version of the page. This may lead to conflicts that
@@ -120,6 +120,7 @@ handling the request.
 5. If the `ETag`s don't match, the server responds with `412 Precondition Failed` response.
 
 Let's illustrate this with an example based on our Wiki page management API:
+<br/>
 
 ```mermaid
 sequenceDiagram
@@ -146,7 +147,7 @@ As mentioned earlier, we designed the Wiki page management API. It provides the 
 
 ## Design & Implementation
 
-To be able to achieve such user experience, we came up with the following API design:
+To be able to achieve such a user experience, we came up with the following API design:
 
 * We will need 2 API operations, one to **save** and one to **get** a Wiki page
 * We will use **strong ETags** and **If-Match** HTTP headers
@@ -156,7 +157,7 @@ To be able to achieve such user experience, we came up with the following API de
 We designed saving a Wiki page so that it will use an idempotent `PUT` HTTP method. This method will be used to create a new document,
 as well as to update an existing one. Clients are allowed to set the `id` of a Wiki page.
 
-The following is a sequence diagram of how the API operation was implemented:
+The following is a flowchart of how the API operation was implemented:
 
 ```mermaid
 flowchart TD
@@ -177,7 +178,7 @@ flowchart TD
 ```
 
 :::tip
-Requirements for this sequence are described in the [RFC 7232](https://www.rfc-editor.org/rfc/rfc7232#section-5)
+The algorithm above strictly follows the [RFC 7232](https://www.rfc-editor.org/rfc/rfc7232#section-5) specification.
 :::
 
 ### Getting a Wiki page
@@ -185,7 +186,7 @@ Requirements for this sequence are described in the [RFC 7232](https://www.rfc-e
 Getting a Wiki page is far simpler. Using standard `GET` HTTP method, we will return the Wiki page with the provided `wikiId`.
 If there's no such page with the provided `wikiId`, we will return `404 Not Found`.
 
-The following is a sequence diagram of how the API operation was implemented:
+The following is a flowchart of how the API operation was implemented:
 
 ```mermaid
 flowchart TD
@@ -197,10 +198,10 @@ flowchart TD
 
 ## Sample code
 
-On our GitHub we've published <u>[a sample project](https://github.com/gran-software-solutions/code-samples/tree/main/concurrency-in-rest-apis)</u> that implements the described API.
+On our GitHub, we've published <u>[a sample project](https://github.com/gran-software-solutions/code-samples/tree/main/concurrency-in-rest-apis)</u> that implements the described API.
 The sample code is written in <u>[Kotlin](https://kotlinlang.org/)</u> using <u>[Vert.x](https://vertx.io/)</u> toolkit. It requires having <u>[JDK 11](https://adoptopenjdk.net/)</u> or newer installed
 
-The code contains a README file, with instructions how to <u>[run the app](https://github.com/gran-software-solutions/code-samples/tree/main/concurrency-in-rest-apis#running-application)</u> and how to <u>[interact with it](https://github.com/gran-software-solutions/code-samples/tree/main/concurrency-in-rest-apis#how-to-interact-with-the-running-application)</u>
+The code contains a README file, with instructions on how to <u>[run the app](https://github.com/gran-software-solutions/code-samples/tree/main/concurrency-in-rest-apis#running-application)</u> and how to <u>[interact with it](https://github.com/gran-software-solutions/code-samples/tree/main/concurrency-in-rest-apis#how-to-interact-with-the-running-application)</u>
 
 ## What now?
 
