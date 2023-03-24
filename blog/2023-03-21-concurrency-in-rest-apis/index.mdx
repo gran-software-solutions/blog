@@ -14,39 +14,99 @@ We also provided <u>[a sample code](#sample-code)</u> which you can use to imple
 
 ## What's the problem to solve?
 
-The issue we want to tackle can also be described as "lost updates". When do such updates happen? When the same resources are attempted to be updated by multiple clients at the same time.
+The issue we want to tackle is known as **"lost updates"**. When do such updates happen? When the same resources are attempted to be updated by multiple clients at the same time.
 What happens in such cases, if you don't have any special handling? **The last update wins**.
 
-Depending on the use case, this may or may not be a problem.
+Let's illustrate this with an example of two different users trying to update the same Wiki article:
 
-In case you want more predictable behavior, so that the end state is not determined by "pure luck", follow the rest of the article, where we describe how you can implement a solution based on ETags[^1].
+```mermaid
+sequenceDiagram
+    autonumber
+
+    actor User1
+    participant API
+    actor User2
+    User1->> +API: GET /wikis/1
+    User2->> API: GET /wikis/1
+    API -->> User1: 200 OK
+    API -->> -User2: 200 OK
+    User1 ->> +API: PUT /wikis/1
+    User2 ->> API: PUT /wikis/1
+    API -->> User1: 204 No Content
+    API -->> -User2: 204 No Content
+```
+
+As seen in the diagram, the issue is that the User2's update isn't based on the latest version of the document.
+
+The solution is to make one of the two users (User2 in this case) angry :slightly_smiling_face:
+
+## Optimistic locking - the solution to "lost updates"
+
+The solution to this problem is called <u>["optimistic locking"](https://en.wikipedia.org/wiki/Optimistic_concurrency_control)</u>.
+Simply put, it's an assumption that the transactions will not interfere often, and that there is no need to lock the resources. Instead, transactions are allowed to change
+the data, but before they are committed, there is a check to see if the data has been changed in the meantime.
+Non locking approach brings a performance benefit.
+
+We will use a similar approach when designing our API.
+
+Let's learn first about ETags, a mechanism to help us implement optimistic locking.
 
 ## What are ETags?
 
-ETag can be described as a fingerprint of a resource. It's a unique identifier that is generated based on the content of the resource. If the content changes, the ETag changes as well.
-ETag is used for caching purposes, as well as for concurrency control, which is our use case.
+`ETag` is an <u>[HTTP response header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag#avoiding_mid-air_collisions)</u>. The value of this header is an opaque
+identifier assigned by servers to specific versions of resources. If the content changes, the ETag changes as well. ETag is used for caching purposes, as well as for concurrency
+control. An example of an `ETag` header:
 
-### Weak vs Strong ETags
+```http
+GET /api/v1/documents/123 HTTP/1.1
+Host: example.com
+Accept: application/json
 
-ETags can be either **strong** or **weak**. Strong ETags guarantee byte-for-byte equality. They are more expensive to generate. Weak ETags only guarantee that the content is semantically equal.
+HTTP/1.1 200 OK
+Content-Type: application/json
+ETag: "bfc13a64729c4290ef5b2c2730249c88ca92d82d"
 
-For our use case, we will use weak ETags.
+{
+  "id": 123,
+  "title": "My document",
+  "content": "This is my document"
+}
+```
 
-The format of a weak ETag is `W/"ETAG_HERE"`. The `W/` prefix indicates that the ETag is weak.
 
-<details>
-<summary><code>ETag</code> vs <code>Last-Modified</code></summary>
 
-`Last-Modified` <u>[HTTP response header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Last-Modified)</u> is another way to handle caching/concurrency. How does it work? When we fetch a resource from the server, we get a `Last-Modified` header in the response. This header contains the **date
-and time when the resource was last modified**. When we want to update the resource, we send the `If-Unmodified-Since` header[^2] in the request. The server will check if the resource was modified after the date and
-time specified in the header. If it was, the update will be rejected with `412 Precondition Failed` response. If it wasn't, the server will proceed with handling the request.
 
-The issue with this approach is its precision. The `Last-Modified` header is only precise to the second. If the resource is updated multiple times in the same second, the `If-Unmodified-Since` header will not be
-able to distinguish between the updates.
+### Control concurrency with `If-Match` HTTP request header
 
-</details>
+`If-Match` <u>[request header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Match)</u> makes the request conditional.
+
+For unsafe methods, such as `PUT`, `POST`, `DELETE`, etc., the server will only proceed with handling the request if the ETag
+matches the ETag of the resource on the server. Otherwise, the server will respond with `412 Precondition Failed` response. This addresses "lost updates" issue.
+
+Let's illustrate this with an example:
+
+```mermaid
+sequenceDiagram
+    autonumber
+
+    actor User1
+    participant API
+    actor User2
+    User1->> +API: GET /wikis/1
+    User2->> API: GET /wikis/1
+    API -->> User1: 200 OK<br/>Etag: 1
+    API -->> -User2: 200 OK<br/>Etag: 1
+    User1 ->> +API: PUT /wikis/1<br/>ETag: 1
+    User2 ->> API: PUT /wikis/1<br/>ETag: 1
+    API -->> User1: 204 No Content<br/>Etag: 2
+    API -->> -User2: 412 Precondition Failed<br/>
+```
 
 ## Real-world example
+
+:::tip WIKI
+Example with wikis: TODO
+:::
 
 If we have no special handling of concurrent requests, this leads to **"lost updates"** problem. This means that the later request overwrites the changes made by the earlier requests, making them "lost".
 
@@ -173,3 +233,4 @@ There are some things you can check on your own projects:
 
 [^1]: [ETag](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag)
 [^2]: [If-Unmodified-Since](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Unmodified-Since)
+[^5]: [ETag](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag)
