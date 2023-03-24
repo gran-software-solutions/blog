@@ -8,7 +8,8 @@ tags: [REST API]
 
 In this article, we will show you how to design and implement a REST API that can handle concurrent requests when updating the same resource.
 
-We also provided <u>[a sample code](#sample-code)</u> which you can use to implement the described solution.
+We also provided <u>[a sample code](#sample-code)</u> which demonstrates how to implement this in a real-world-like scenario of Wiki page
+management API.
 
 <!--truncate-->
 
@@ -18,6 +19,7 @@ The issue we want to tackle is known as **"lost updates"**. When do such updates
 What happens in such cases, if you don't have any special handling? **The last update wins**.
 
 Let's illustrate this with an example of two different users trying to update the same Wiki article:
+<br/>
 
 ```mermaid
 sequenceDiagram
@@ -36,26 +38,45 @@ sequenceDiagram
     API -->> -User2: 204 No Content
 ```
 
-As seen in the diagram, the issue is that the User2's update isn't based on the latest version of the document.
+<br/>
 
-The solution is to make one of the two users (User2 in this case) angry :slightly_smiling_face:
+The issue with this flow is that the User2 was able to update the document, without even caring if the document might have
+changed in the meantime. User1's update **was lost**.
+
+The solution is to make one of the two users (User2 in this case) angry :slightly_smiling_face:.
+
+How's that? Let's read on.
 
 ## Optimistic locking - the solution to "lost updates"
 
-The solution to this problem is called <u>["optimistic locking"](https://en.wikipedia.org/wiki/Optimistic_concurrency_control)</u>.
-Simply put, it's an assumption that the transactions will not interfere often, and that there is no need to lock the resources. Instead, transactions are allowed to change
-the data, but before they are committed, there is a check to see if the data has been changed in the meantime.
-Non locking approach brings a performance benefit.
+You may have noticed that some software you used in the past had a mechanism to prevent "lost updates". Let's take a Wiki as an example.
+As a Wiki page is shared among your teammates, and as writing a Wiki page is a collaborative effort, and additionally takes a while to write,,
+the chances are that someone else may have updated the page as of the time you were writing your changes.
 
-We will use a similar approach when designing our API.
+Usually such tools will let you know that you need to sync your changes with the latest version of the page. This may lead to conflicts that
+you need to resolve, before saving your work.
 
-Let's learn first about ETags, a mechanism to help us implement optimistic locking.
+You may have expereinced the same by using Git Source Code Versioning tool. If you try to push your changes to a remote repository, and someone
+else pushed their changes to the same branch as you, you will get an error message saying that you need to pull the remote changes first.
+
+The beauty of this design is that it forces you to base your work on the work of others, **whether you like it or not**.
+
+The design implemented in both cases is called <u>["optimistic locking"](https://en.wikipedia.org/wiki/Optimistic_concurrency_control)</u>.
+Simply put, it's an assumption that the transactions will not interfere often, and that there is no need to lock the resources they may change. Instead,
+transactions are allowed to change the data, but before they are committed, there is a check to see if the data has been changed in the meantime. Non
+locking approach brings a performance benefit.
+
+Later in this article, we will show an example of the Wiki page management API, and we will use optimistic locking to prevent "lost updates".
+
+Technical means we will use to implement optimistic locking are `ETag` and `If-Match` HTTP headers.
+
+Let's learn first about ETags first.
 
 ## What are ETags?
 
-`ETag` is an <u>[HTTP response header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag#avoiding_mid-air_collisions)</u>. The value of this header is an opaque
-identifier assigned by servers to specific versions of resources. If the content changes, the ETag changes as well. ETag is used for caching purposes, as well as for concurrency
-control. An example of an `ETag` header:
+`ETag` (stands for **E**ntity Tag) is an <u>[HTTP response header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag#avoiding_mid-air_collisions)</u>. The value of
+this header is an opaque identifier assigned by servers to specific versions of resources. If the content of the resource changes, the ETag changes as well.
+ETag is used for caching purposes, as well as for concurrency control. An example of an `ETag` header:
 
 ```http
 GET /api/v1/documents/123 HTTP/1.1
@@ -72,18 +93,33 @@ ETag: "bfc13a64729c4290ef5b2c2730249c88ca92d82d"
   "content": "This is my document"
 }
 ```
+:::tip
+There are 2 types of `ETag`s: **weak** and **strong**.
+Strong `ETag`s imply byte-by-byte equality. Weak `ETag`s imply semantic equality.
 
+Technically, weak `ETag`s are prefixed with `W/`. Strong `ETag`s are not prefixed.
 
+An example of a weak `ETag` would be `W/"bakck3"`, whereas an example of a strong `ETag` would be `"bfc13a64729c4290ef5b2c2730249c88ca92d82d"`.
 
+Strong `ETag`s are usually preferred, as they are more reliable. However, they are more expensive to compute
+As strong `ETag`s are preferred by `If-Match` header, we will use them in our example.
 
-### Control concurrency with `If-Match` HTTP request header
+Read more about `ETag`s in [MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag).
+:::
+
+## Control concurrency with `If-Match` HTTP request header
 
 `If-Match` <u>[request header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Match)</u> makes the request conditional.
+`If-Match` contains list of `ETag`s. The flow works like this:
+1. A user requests a resource from the server, and the server responds with the resource and its `ETag`.
+2. User makes local modification to the resource
+3. User sends the modified resource to the server, along with the `ETag` of the resource it received from the server. This `ETag` is sent in
+`If-Match` header.
+4. Server checks if the `ETag` in `If-Match` header matches the `ETag` of the resource on the server. If they match, the server proceeds with
+handling the request.
+5. If the `ETag`s don't match, the server responds with `412 Precondition Failed` response.
 
-For unsafe methods, such as `PUT`, `POST`, `DELETE`, etc., the server will only proceed with handling the request if the ETag
-matches the ETag of the resource on the server. Otherwise, the server will respond with `412 Precondition Failed` response. This addresses "lost updates" issue.
-
-Let's illustrate this with an example:
+Let's illustrate this with an example based on our Wiki page management API:
 
 ```mermaid
 sequenceDiagram
@@ -104,60 +140,37 @@ sequenceDiagram
 
 ## Real-world example
 
-:::tip WIKI
-Example with wikis: TODO
-:::
-
-If we have no special handling of concurrent requests, this leads to **"lost updates"** problem. This means that the later request overwrites the changes made by the earlier requests, making them "lost".
-
-Let's demonstrate the problem of lost updates with an example. Let's, for a moment, pretend there's no such thing as Google Docs or similar collaborative editing tools.
-Our boss comes to us and says:
-
-> We need a tool that will allow group of people to **work together on a text document**. It needs to be finished in **2 days**.
-
-With all the time in the world, we came up with the following design:
-
-* This **will not be** a real-time collaboration where we can see the changes as they happen
-* A user will only be able to update the document if the document is based on the **latest version of the document**
-
-The business was happy with the design proposal, so we started implementing it.
-
-### The user experience
-
-After we finished the implementation, we tested it, by inviting 2 of our colleagues (Jeannie and Frank) to test it out.
-The following is a timeline of Jeanie and Frank's actions and the results:
+As mentioned earlier, we designed the Wiki page management API. It provides the following user experience:
 
 ![Action sequence](./action-sequence.png)
-
-Our boss was happy with the results!
 
 ## Design & Implementation
 
 To be able to achieve such user experience, we came up with the following API design:
 
-* We will use **weak ETags** to handle concurrency
-* We will need 2 API operations, one to **save** and one to **get** a document
+* We will need 2 API operations, one to **save** and one to **get** a Wiki page
+* We will use **strong ETags** and **If-Match** HTTP headers
 
-### Saving a document
+### Saving a Wiki page
 
-We designed saving a document so that it will use an idempotent `PUT` HTTP method. This method will be used to create a new document, as well as to update an existing one.
-Clients are allowed to set the `documentId`.
+We designed saving a Wiki page so that it will use an idempotent `PUT` HTTP method. This method will be used to create a new document,
+as well as to update an existing one. Clients are allowed to set the `id` of a Wiki page.
 
 The following is a sequence diagram of how the API operation was implemented:
 
 ```mermaid
 flowchart TD
     A([Start]) --> B{Request body present?}
-    B -- Yes --> C[Get documentID path param]
-    C --> D[Get document from DB by documentID]
-    D --> E{Document exists?}
-    E -- No --> F[Save new document]
+    B -- Yes --> C[Get wikiID path param]
+    C --> D[Get the WIki page from DB by wikiID]
+    D --> E{Wiki page exists?}
+    E -- No --> F[Save new Wiki page]
     F --> G([HTTP 204])
     E -- Yes --> H[Get If-Match header value from request]
     H --> I{Value missing?}
     I -- Yes --> J([HTTP 428 - Precondition required])
-    I -- No --> K{Request ETag == document Etag?}
-    K -- Yes --> L[Update document]
+    I -- No --> K{Request ETag == Wiki page Etag?}
+    K -- Yes --> L[Update Wiki page]
     L --> G
     K -- No -->  N([HTTP 412 -Precondition failed])
     B -- No ----> O([HTTP 400 - Bad request])
@@ -167,17 +180,17 @@ flowchart TD
 Requirements for this sequence are described in the [RFC 7232](https://www.rfc-editor.org/rfc/rfc7232#section-5)
 :::
 
-### Getting a document
+### Getting a Wiki page
 
-Getting a document is far simpler. Using standard `GET` HTTP method, we will return the document with the provided `documentId`. If there's no document with the provided `documentId`,
-we will return `404 Not Found`.
+Getting a Wiki page is far simpler. Using standard `GET` HTTP method, we will return the Wiki page with the provided `wikiId`.
+If there's no such page with the provided `wikiId`, we will return `404 Not Found`.
 
 The following is a sequence diagram of how the API operation was implemented:
 
 ```mermaid
 flowchart TD
-    A([Start]) --> B[Resolve document by provided documentID]
-    B --> C{Document exists?}
+    A([Start]) --> B[Resolve a Wiki page by provided wikiID]
+    B --> C{Wiki page exists?}
     C -- No --> D([HTTP 404])
     C -- Yes --> E([HTTP 200])
 ```
@@ -187,50 +200,8 @@ flowchart TD
 On our <u>[GitHub](https://github.com/gran-software-solutions/code-samples/tree/main/concurrency-in-rest-apis)</u> we've published a sample project that implements the described API.
 The sample code is written in <u>[Kotlin](https://kotlinlang.org/)</u> using <u>[Vert.x](https://vertx.io/)</u> toolkit. It requires having <u>[JDK 11](https://adoptopenjdk.net/)</u> or newer installed
 
-Here's how you can run it:
-
-* Clone the repository
-  ```shell
-  git clone git@github.com:gran-software-solutions/code-samples.git
-  ```
-* Run the following command in the root of the project:
-  ```shell
-  cd concurrency-in-rest-apis
-  ./gradlew run
-  ```
-* This will start the server on port `8888`
-* Open another shell to run the commands to test the API
-* Create a new document with id `7051d73e-9e82-44ca-a0d9-eb8af23b9cf6`
-   ```shell
-   curl -i -X PUT \
-      -H "Content-Type: text/plain" \
-      -d 'some content' \
-      http://localhost:8888/documents/7051d73e-9e82-44ca-a0d9-eb8af23b9cf6
-   ```
-* Get the document with id `7051d73e-9e82-44ca-a0d9-eb8af23b9cf6`
-  ```shell
-  curl -i \
-    http://localhost:8888/documents/7051d73e-9e82-44ca-a0d9-eb8af23b9cf6
-  ```
-* In the response, you will see the `ETag` header. It will look something like this: `ETag: W/"XXXYYYZZZ"`. Copy the value of the header.
-* Update the document with id `7051d73e-9e82-44ca-a0d9-eb8af23b9cf6`
-  ```shell
-  curl -i -X PUT \
-    -H "Content-Type: text/plain" \
-    -H 'If-Match: W/"XXXYYYZZZ"' \
-    -d 'some new content' \
-    http://localhost:8888/documents/7051d73e-9e82-44ca-a0d9-eb8af23b9cf6
-  ```
-* Repeat the previous command. You will see that the API returns `412 Precondition Failed` because the `ETag` header doesn't match the document's ETag.
-* Repeat the previous command, this time without the `If-Match` header. You will see that the API returns `428 Precondition Required` because the `If-Match` header is missing.
+The code contains a README file, with instructions how to <u>[run the app](https://github.com/gran-software-solutions/code-samples/tree/main/concurrency-in-rest-apis#running-application)</u> and how to <u>[interact with it](https://github.com/gran-software-solutions/code-samples/tree/main/concurrency-in-rest-apis#how-to-interact-with-the-running-application)</u>
 
 ## What now?
 
-There are some things you can check on your own projects:
-
-* Do you have use-cases where your APIs try to mutate the same resource at the same time? To avoid hard times troubleshooting concurrency issues, think about if ETags or at least `If-Unmodified-Since` headers would be a good fit for your use-case.
-* You can leverage ETags even to implement caching. If you have a read-heavy API and resources expensive to compute, ETags can come in handy
-
-[^1]: [ETag](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag)
-[^2]: [If-Unmodified-Since](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Unmodified-Since)
-[^5]: [ETag](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag)
+Are there use-cases where your API consumers can manage the same resource? To avoid data loss, use optimistic locking.
