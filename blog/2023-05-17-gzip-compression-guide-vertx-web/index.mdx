@@ -8,8 +8,8 @@ image: https://cdn.pixabay.com/photo/2020/05/30/08/17/rails-5238078_960_720.jpg
 
 ![Rails](./elephants.png)
 
-Gzip compression is a way of making files smaller on the web, which can improve the performance and efficiency of your vert.x web
-application. However, it also has some drawbacks and trade-offs that you need to consider.
+Gzip compression is a way of making files smaller on the web, which can improve the performance and efficiency of your vert.x based REST APIs. However, it also has some drawbacks and trade-offs that
+you need to consider.
 
 In this blog post, I will explain what gzip compression is, how it works, and how you can enable or disable it in your vert.x REST API.
 I will also discuss the pros and cons of enabling or disabling gzip compression in different scenarios.
@@ -58,7 +58,7 @@ Here are some scenarios where disabling gzip compression on web servers may be p
 reduce the file size significantly, and may even increase it due to the overhead of the gzip header and trailer.
 * When the client **does not support or accept gzip encoding**, such as some older browsers or proxies. In this case, gzip compression may cause
 compatibility issues or errors, and the server may need to send an uncompressed version of the response instead.
-* When the **server resources are limited or overloaded**, such as during peak traffic or high demand13. In this case, gzip compression may consume
+* When the **server resources are limited or overloaded**, such as during peak traffic or high demand. In this case, gzip compression may consume
 too much CPU and memory on the server side, and affect the performance and availability of the server.
 
 ## Example code
@@ -66,7 +66,7 @@ too much CPU and memory on the server side, and affect the performance and avail
 To see how gzip compression works in vert.x web, you need to clone the example <u>[GitHub repository](https://github.com/gran-software-solutions/gzip-rest-vertx)</u>.
 After cloning the repository, you can start the application locally with `GZIP_ENABLED` set to either true or false (to enable or disable server compression), for instance:
 
-```shell
+```bash
 GZIP_ENABLED=true ./gradlew run
 ```
 
