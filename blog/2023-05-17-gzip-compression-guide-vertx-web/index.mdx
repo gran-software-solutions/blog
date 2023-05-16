@@ -61,28 +61,25 @@ too much CPU and memory on the server side, and affect the performance and avail
 
 ## Example code
 
-Clone the GitHub repository.
-Start it locally:
+To see how gzip compression works in vert.x web, you need to clone the example <u>[GitHub repository](https://github.com/gran-software-solutions/gzip-rest-vertx)</u>.
+After cloning the repository, you can start the application locally with GZIP_ENABLED set to either true or false (to enable or disable server compression), for instance:
 
-* jenv shell 17
-* GZIP_ENABLED=false ./gradlew run
+```shell
+GZIP_ENABLED=true ./gradlew run
+```
 
-Test gzip compression with curl:
+Test gzip compression with curl, by firing the following request:
 
-* With gzip compression enabled on the server side:
-    ```bash
-    curl -H "Accept-Encoding: gzip" \
-      -so /dev/null http://localhost:8888/ \
-      -w '%{size_download}\n'
+```bash
+curl -H "Accept-Encoding: gzip" \
+  -so /dev/null http://localhost:8888/users/b91acf06-021e-44cf-a4e5-a815934ff004 \
+  -w '%{size_download}\n'
 
-    133
-    ```
-* With gzip compression disabled on the server side:
-    ```bash
-    curl -H "Accept-Encoding: gzip" -so /dev/null http://localhost:8888/ -w '%{size_download}\n'
+# response size in bytes
+133
+```
 
-    143
-    ```
+You should get a response size of 133 bytes, which is smaller than the response size of 143 bytes when gzip compression is disabled on the server side.
 
 ## Conclusion
 
