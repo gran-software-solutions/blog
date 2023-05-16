@@ -1,0 +1,90 @@
+---
+title: To Gzip or Not to Gzip? A Guide to Using Compression in Vert.x REST APIs
+authors: dodalovicgran
+tags: [REST API, technology, vertx]
+enableComments: true
+---
+
+![Elephants](./elephants.png)
+
+Gzip compression is a way of making files smaller on the web, which can improve the performance and efficiency of your vert.x based REST APIs. However, it also has some drawbacks and trade-offs that
+you need to consider.
+
+In this blog post, I will explain what gzip compression is, how it works, and how you can enable or disable it in your vert.x REST API.
+I will also discuss the pros and cons of enabling or disabling gzip compression in different scenarios.
+
+<!--truncate-->
+
+## What is gzip?
+
+Gzip compression is a way of making files smaller so they can travel faster on the web. It is like putting clothes in a vacuum bag and sucking out the air to make them take up less space. Gzip compression can make
+files up to 10 times smaller, depending on what’s in them.
+
+Gzip compression works by using a special code that finds and removes parts of the files that are repeated or not needed. It also adds some information at the beginning and end of the files to tell how they
+were compressed and how to unpack them. The files are then divided into smaller pieces that are easier to send and receive.
+
+Gzip compression is used by many websites and browsers, and can make web pages load faster and use less data. When a browser asks for a web page, it can tell the website if it can handle gzip compression.
+If so, the website can pack the web page using gzip and send it to the browser. The browser can then unpack the web page using gzip and show it as usual. This way, both the website and the browser can save
+time and money.
+
+## Benefits of enabling gzip compression
+
+Here are the main benefits of enabling gzip compression:
+
+* **Faster page load times**: Gzip compression can make web pages load faster because they are smaller and take less time to travel over the network.
+* **Reduced bandwidth usage**: Gzip compression can reduce the amount of data that is transferred over the network between the website and the browser.
+* **Improved user experience**: Gzip compression can improve the user experience by making web pages load faster and use less data.
+* **Improved SEO ranking**: Gzip compression can improve the SEO ranking of a website because it makes web pages load faster and use less data (doesn't matter for REST APIs).
+* **Compatibility with most browsers and clients**: Gzip compression is supported by most browsers and clients, so it can be used on most websites.
+
+## Drawbacks of enabling gzip compression
+
+Here are the main drawbacks of enabling gzip compression:
+
+* **Increased CPU and memory usage** on the server side, as the server has to compress the response before sending it to the client. This can affect the
+performance and scalability of the server, especially if it has to handle many requests or large files.
+* **Potential security risks and vulnerabilities**, as some malicious clients may try to exploit gzip compression to launch attacks such as compression
+oracle attacks or BREACH attacks . These attacks can allow an attacker to steal sensitive information from encrypted connections by manipulating the
+compressed data.
+* Possible issues with **caching and content negotiation**, as some proxies or intermediaries may not support or respect gzip compression . This can result
+in corrupted or stale responses, or responses that do not match the client's preferences.
+
+## Scenarios where disabling gzip compression may be preferable
+
+Here are some scenarios where disabling gzip compression on web servers may be preferable are:
+
+* When the **response body is already compressed or small**, such as images, videos, or other binary files. In this case, gzip compression may not
+reduce the file size significantly, and may even increase it due to the overhead of the gzip header and trailer.
+* When the client **does not support or accept gzip encoding**, such as some older browsers or proxies. In this case, gzip compression may cause
+compatibility issues or errors, and the server may need to send an uncompressed version of the response instead.
+* When the **server resources are limited or overloaded**, such as during peak traffic or high demand. In this case, gzip compression may consume
+too much CPU and memory on the server side, and affect the performance and availability of the server.
+
+## Example code
+
+To see how gzip compression works with vert.x REST APIs, you need to clone the example <u>[GitHub repository](https://github.com/gran-software-solutions/gzip-rest-vertx)</u>.
+After cloning the repository, you can start the application locally with `GZIP_ENABLED` set to either true or false (to enable or disable server compression), for instance:
+
+```bash
+GZIP_ENABLED=true ./gradlew run
+```
+
+Test gzip compression with curl, by firing the following request:
+
+```bash
+curl -H "Accept-Encoding: gzip" \
+  -so /dev/null http://localhost:8888/users/b91acf06-021e-44cf-a4e5-a815934ff004 \
+  -w '%{size_download}\n'
+
+# response size in bytes
+133
+```
+
+You should get a response size of `133` bytes, which is smaller than the response size of `143` bytes when gzip compression is disabled on the server side.
+
+## Conclusion
+
+Gzip compression can make your REST APIs faster and more efficient, but it also has some drawbacks and trade-offs. The best advice is to
+enable gzip compression only when it is necessary, and disable it otherwise. This will help you avoid potential issues with performance, security and compatibility.
+
+Thank you for reading and please share your feedback below.
