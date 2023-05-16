@@ -38,7 +38,7 @@ Here are the main benefits of enabling gzip compression:
 * **Improved SEO ranking**: Gzip compression can improve the SEO ranking of a website because it makes web pages load faster and use less data (doesn't matter for REST APIs).
 * **Compatibility with most browsers and clients**: Gzip compression is supported by most browsers and clients, so it can be used on most websites.
 
-## Drawbacks of enabling gzip compression in vert.x web
+## Drawbacks of enabling gzip compression
 
 Here are the main drawbacks of enabling gzip compression:
 
@@ -50,7 +50,7 @@ compressed data.
 * Possible issues with **caching and content negotiation**, as some proxies or intermediaries may not support or respect gzip compression . This can result
 in corrupted or stale responses, or responses that do not match the client's preferences.
 
-## Scenarios where disabling gzip compression in vert.x web may be preferable
+## Scenarios where disabling gzip compression may be preferable
 
 Here are some scenarios where disabling gzip compression on web servers may be preferable are:
 
@@ -63,7 +63,7 @@ too much CPU and memory on the server side, and affect the performance and avail
 
 ## Example code
 
-To see how gzip compression works in vert.x web, you need to clone the example <u>[GitHub repository](https://github.com/gran-software-solutions/gzip-rest-vertx)</u>.
+To see how gzip compression works with vert.x REST APIs, you need to clone the example <u>[GitHub repository](https://github.com/gran-software-solutions/gzip-rest-vertx)</u>.
 After cloning the repository, you can start the application locally with `GZIP_ENABLED` set to either true or false (to enable or disable server compression), for instance:
 
 ```bash
