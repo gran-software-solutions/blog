@@ -9,6 +9,17 @@ const projectName = 'blog';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
+    staticDirectories: ['public', 'static'],
+    scripts: [
+        {
+            src: '/klaro.js',
+            async: true
+        },
+        {
+            src: '/klaro-config.js',
+            async: true
+        },
+    ],
     markdown: {
         mermaid: true,
     },
