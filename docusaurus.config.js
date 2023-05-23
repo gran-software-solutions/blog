@@ -78,7 +78,8 @@ const config = {
                 title: 'GRAN Blog',
                 logo: {
                     alt: 'My Site Logo',
-                    src: 'img/logo.svg',
+                    src: 'img/Logo_BrightOrange.svg',
+                    srcDark: 'img/Logo_BrightOrange.svg',
                 },
                 items: [
                     {
