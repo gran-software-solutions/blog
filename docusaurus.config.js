@@ -79,7 +79,6 @@ const config = {
                 logo: {
                     alt: 'My Site Logo',
                     src: 'img/logo.svg',
-                    srcDark: 'img/logo-dark-mode.svg',
                 },
                 items: [
                     {
@@ -109,6 +108,13 @@ const config = {
                         title: 'More',
                         items: [
                             {
+                                html: `
+                                    <a href="https://gransoftware.de" target="_blank">
+                                      <img class='footer-logo' alt="GRAN Software Solutions GmbH" src="/img/Logotype_Tagline_BrightOrange.png"/>
+                                    </a>
+                                  `,
+                            },
+                            {
                                 label: 'GitHub',
                                 href: 'https://github.com/gran-software-solutions/blog',
                             },
@@ -117,7 +123,7 @@ const config = {
                                 href: '/credits'
                             }
                         ],
-                    },
+                    }
                 ],
                 copyright: `Copyright © ${new Date().getFullYear()} GRAN Software Solutions GmbH. Built with Docusaurus.`,
             },
@@ -145,6 +151,9 @@ const config = {
             }),
         ],
         '@docusaurus/theme-mermaid'
+    ],
+    stylesheets: [
+        "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@200;300;400;500;600;700&display=swap",
     ],
 };
 
