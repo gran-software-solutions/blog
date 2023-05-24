@@ -7,16 +7,15 @@ enableComments: true
 
 ![HATEOAS](./banner.jpeg)
 
-RESTful API without HATEOAS is not a RESTful API by definition. Majority of developers refrain from using HATEOAS because it comes with extra complexity, its value is questionable and it’s not really popular in general.
+RESTful API without HATEOAS is not a RESTful API by definition. The majority of developers refrain from using HATEOAS because it comes with extra complexity, its value is questionable and it’s not popular in general.
 
-Let’s explore HATEOAS hands-on and see if those concerns hold true. You will learn how to implement HATEOAS on the server side and on the client side using libraries and get access to working code on Github.
+Let’s explore HATEOAS hands-on and see if those concerns hold. You will learn how to implement HATEOAS on the server side and the client side using libraries and get access to working code on GitHub.
 
 <!--truncate-->
 
 ## Introduction
 
 While the RESTfulness of an API falls on a spectrum, incorporating HATEOAS brings it closer to the ideal. By adopting HATEOAS principles, you can achieve better coordination, simplify development, and enhance the overall collaborative experience.
-
 If you want to have:
 - a robust API by making your clients harder to break
 - self-documenting endpoints that improve communication
@@ -32,7 +31,9 @@ I would suggest you start with designing the API first. For our example we will 
 
 ![Borrow API](./borrow.png)
 
-We’re going to create a Borrow API to manage things that you lend, so that you will never lose a thing! We’re going to have a Borrowee (because it sounds nice) and an Item. We could have many endpoints to cover many use cases like so:
+In our example, we will use Kotlin and Spring, because I think this is a pretty popular and easy-to-use setup.
+I would suggest you start with designing the API first. For our example, we will use OpenAPI 3.0 specification.
+We’re going to create a Borrow API to manage things that you lend so that you will never lose a thing! We’re going to have a Borrowee (because it sounds nice) and an Item. We could have many endpoints to cover many use cases like so:
 
 ```
 GET /items
@@ -49,7 +50,7 @@ GET /items/by/{name}
 
 But for sake of simplicity we will use only a few, just enough to explain the issue.
 You can find the full OAS 3.0 specs in the repository (look in the comment section down below) in `resources/borrow.yaml`.
-OpenAPI specs is the place where you already need to think about HATEOAS. A good idea is to sketch first what links you want to attach where. And don’t forget to leverage JSON Schema i.e. define links in components, not in paths.
+OpenAPI spec is the place where you already need to think about HATEOAS. A good idea is to sketch first what links you want to attach where. And don’t forget to leverage JSON Schema i.e. define links in components, not in paths.
 
 ## OpenAPI
 
@@ -113,7 +114,7 @@ Let’s decode this part. A link is made of 3 parts:
 - Operation id
 - Parameters
 
-Take the first one as an example. `borrowee-from-item`” is the name of the link. It refers the operation with the id `get-a-borrowee`. This operation id is a concrete path from the specification. In our case it’s this:
+Take the first one as an example. `borrowee-from-item` is the name of the link. It refers the operation with the id `get-a-borrowee`. This operation id is a concrete path from the specification. In our case, it’s this:
 
 ```yaml
   '/borrowee/{name}':
@@ -146,10 +147,10 @@ Last but not least, the list of parameters that are used to build the URI e.g. w
 
 You can address this property using this syntax: `$response.body#/borrowee`.
 This may sound confusing by now. But it’s pretty simple if you approach this in 4 steps:
-- Define your components in schema
+- Define your components in the schema
 - Define your paths and which components they return
-- Define self links for every component
-- Define which components should be linked in other components
+- Define `self` links for every component
+- Define which components should be linked to other components
 
 Now that you have your OpenAPI specs, you have two options. Generate code from it (e.g. models or even interfaces for your controllers) or write your code based on the specifications. This is an article about HATEOAS and not OpenAPI code generation, so let’s just write some code.
 
@@ -235,7 +236,7 @@ We use RequestParams for page and size. This is used for pagination. In the bott
         )
 ```
 
-The CustomCollectionModel is a wrapper around the response. This has two important tasks:
+The `CustomCollectionModel is a wrapper around the response. This has two important tasks:
 - Allow for adding extra fields to the model (this is used to add links)
 - Allow us to define the response as we wish. In our case we want to have something like:
 
@@ -246,7 +247,7 @@ The CustomCollectionModel is a wrapper around the response. This has two importa
 }
 ```
 
-Without this wrapper we would not be able to add `_links`, and without our custom wrapper instead of `data` we would see the `_embedded` property.
+Without this wrapper, we would not be able to add `_links`, and without our custom wrapper instead of `data` we would see the `_embedded` property.
 The first few lines of code that define the `items` variable is just a database replacement. But it does show HATEOAS in action:
 
 ```kotlin
@@ -266,7 +267,7 @@ Because our model extends the `RepresentationModel`, we can add extra properties
   }
 }
 ```
-We will do the same for BorroweeController. But to allow clients to discover the API entirely, we need a main hub with all the endpoints that client can access. Let’s create a HATEOASController:
+We will do the same for `BorroweeController`. But to allow clients to discover the API entirely, we need a main hub with all the endpoints that the client can access. Let’s create a `HATEOASController`:
 
 ```kotlin
 @RestController
@@ -282,7 +283,7 @@ class HATEOASController {
 }
 ```
 
-Great! If you check out the code, you can simply run the app and call those endpoints from the browser or your favourite rest client like Postman or Insomnia.
+Great! If you check out the code, you can simply run the app and call those endpoints from the browser or your favorite rest clients like Postman or Insomnia.
 
 # HATEOAS on Client Side
 
@@ -346,7 +347,7 @@ export async function loader(): Promise<Data> {
 }
 ```
 
-s you can see, it only requires the base URL i.e. `localhost:8080`. Every other endpoint is discovered automatically. You only need to call it once to see which resources you want to get.
+As you can see, it only requires the base URL i.e. `localhost:8080`. Every other endpoint is discovered automatically. You only need to call it once to see which resources you want to get.
 The result is this:
 
 ![Result](./result.png)
