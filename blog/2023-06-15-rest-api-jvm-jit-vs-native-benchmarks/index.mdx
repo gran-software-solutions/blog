@@ -1,0 +1,45 @@
+---
+title: 'A Tale of Two REST APIs: JVM vs Native Performance Evaluation'
+
+authors: dodalovicgran
+tags: [REST API, technology]
+enableComments: true
+---
+
+![HATEOAS](./banner.png)
+
+## Introduction
+
+> **TL;DR**: Natively compiled Vert.x is good for function as a service (FaaS), while traditional JVM-powered Vert.x is better for raw performance.
+
+In this blog post, I will compare two types of REST API runtimes: one running on the Java Virtual Machine (JVM) and one compiled natively using
+GraalVM. I will use <u>[Vert.x toolkit](https://vertx.io/)</u> to implement a simple REST API.
+
+I will use a simple benchmarking tool called <u>[Plow](https://github.com/six-ddc/plow)</u> to measure the response time, throughput, memory usage
+and CPU utilization of both implementations.
+
+## Advantages of native compilation
+
+One advantage of natively compiled REST APIs in cloud environments is that they can offer better performance and lower resource consumption than
+interpreted or bytecode-based languages. JVM is a great platform, but comes with a price, especially in the cloud. By using GraalVM native image,
+we reduce the memory footprint and startup time of the application, which is especially important for serverless applications.
+
+## Point 1: Natively compiled Vert.x is good for function as a service (FaaS)
+
+Explain what FaaS is and why it is useful for REST API development
+Explain how natively compiled Vert.x can improve FaaS performance by reducing startup time, memory usage, and resource consumption
+Provide some examples or benchmarks of natively compiled Vert.x FaaS applications
+Acknowledge some limitations or challenges of natively compiled Vert.x for FaaS, such as debugging, testing, or deployment issues
+
+## Point 2: Traditional JVM-powered Vert.x is better for raw performance
+
+Explain what raw performance means and why it is important for REST API development
+Explain how JVM-powered Vert.x can achieve higher throughput, scalability, and reliability than natively compiled Vert.x
+Provide some examples or benchmarks of JVM-powered Vert.x REST API applications
+Acknowledge some limitations or challenges of JVM-powered Vert.x for raw performance, such as longer startup time, higher memory usage, or garbage collection overhead
+
+## Conclusion
+
+Summarize the main points of the blog post: the tradeoff between performance and portability of natively compiled Vert.x for REST API development
+Provide some recommendations or best practices for choosing between natively compiled Vert.x and JVM-powered Vert.x for different use cases or scenarios
+End with a call to action or a question to engage the reader
