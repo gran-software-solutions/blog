@@ -102,6 +102,14 @@ const config = {
                             {
                                 label: 'LinkedIn',
                                 to: 'https://www.linkedin.com/company/gran-software-solutions/'
+                            },
+                            {
+                                label: 'Discord',
+                                to: 'https://discord.gg/2uYKcWG9'
+                            },
+                            {
+                                label: 'Time Tracking Tool',
+                                to: 'https://timeline.gransoftware.de'
                             }
                         ]
                     },
