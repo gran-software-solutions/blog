@@ -109,7 +109,7 @@ const config = {
                             },
                             {
                                 label: 'Time Tracking Tool',
-                                to: 'https://timeline.gransoftware.de'
+                                to: 'https://sheetty.com'
                             }
                         ]
                     },
