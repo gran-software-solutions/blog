@@ -10,7 +10,7 @@
     --ifm-background-color: #fff9ef;
     --ifm-navbar-background-color: var(--ifm-background-color);
     --ifm-card-background-color: var(--ifm-background-color);
-    --ifm-font-family-base: "IBM Plex Mono", monospace;
+    --ifm-font-family-base: "IBM Plex Sans", sans-serif;
     --ifm-font-family-monospace: "IBM Plex Mono", monospace;
 }
 
