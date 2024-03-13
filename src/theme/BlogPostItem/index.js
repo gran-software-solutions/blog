@@ -19,7 +19,7 @@ export default function BlogPostItemWrapper(props) {
                 cookieName={"cookieConsentGivenOn"}
                 cookieValue={new Date().toISOString()}
             >
-                We use Cookies to deliver content and they are mandatory for technical reasons. We are not using it for tracking or marketing.
+                We use Cookies to deliver and improve our content. Please consult our <a href="https://www.gransoftware.de/privacy-policy">privacy policy</a>
             </CookieConsent>
 
             <BlogPostItem {...props} />
