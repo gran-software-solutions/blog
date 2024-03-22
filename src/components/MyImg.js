@@ -4,8 +4,11 @@ function MyImg(props) {
     if (props.title !== undefined) {
         return (
             <figure>
-                <img src={props.src} alt={props.alt}/>
-                <figcaption style={{ textAlign: "center" }}>{props.title}</figcaption>
+                <center>
+                    <img src={props.src} alt={props.alt}/>
+                    <figcaption style={{textAlign: "center"}}>{props.title}</figcaption>
+                </center>
+
             </figure>
         );
     } else {

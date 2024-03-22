@@ -1,0 +1,140 @@
+---
+title: "Weekly Sheetty Scoop🍦 #1"
+authors: gglazewskigran
+tags: [weekly]
+enableComments: true
+---
+
+import MyImg from '@site/src/components/MyImg';
+
+Just build it and they will come. Except they won’t. And if you, like every other person on the planet, missed the evolution of the time tracking industry, brought about by Sheetty.com, the Weekly Sheetty Scoop is a record of that journey filled with challenges and achievements, problems and solutions, questions and decisions that took place along the way. Week by week.
+
+![Weekly Sheetty Scoop #1](./cover-image.png "Weekly Sheetty Scoop #1")
+
+<!--truncate-->
+
+The goal is to document and share progress, to learn and teach.
+
+I invite you to the crazy world of starting from scratch, bootstrapping a business, and handling UX/UI and marketing… as a backend developer.
+
+Expect a new post every Friday.
+
+## What’s up?
+
+The time tracking tool we are talking about is online already today ([sheetty.com](https://sheetty.com)), but lately we worked on a very important feature.
+
+## Teams
+
+Time tracking is great, especially if you’re getting paid for those hours. But tracking others' time is even better, especially if you’re getting paid for those hours!
+
+Time tracking industry is growing rapidly. Two main factors are driving this change:
+- Legislation (some countries, like Germany, require employers to do it)
+- Productivity (workforce is more and more expensive and time wastage grows)
+
+For this reason we introduced Teams. Actually we didn’t. It’s still a work in progress. But the general idea is to allow for creating teams, inviting others, and track their time. Like a small company, or a company of freelancers. You get the point.
+
+<MyImg src={require("./sidemenu.png").default} alt="Side menu of Sheetty"
+       title="naiveui.com offers a great variety of components for Vue.js, like this side menu."/>
+
+The goal is to enable small businesses to gain insight in their time wastage, allocate workforce more efficiently and help translate time to money. All this with detailed and flexible reporting, easy project management, quick overview of current state of affairs and intuitive and modern interface
+
+It’s easier said than done. We had no idea how to even start. Adding it to the current feature set would wreak havoc (and it does). We had many questions, right from the start. One of them being:
+
+### Who owns the data?
+
+Time tracking for individuals is trivial. You track time, it’s yours and you can change or delete it as you please.
+
+<MyImg src={require("./this-is-fine.png").default} alt="Individuals can delete their time entries"
+       title="This is fine."/>
+
+But if I’m tracking time for someone’s organisation, can I still change or delete my time entries as I please?
+
+<MyImg src={require("./this-is-not-fine.png").default}
+       alt="Individual delets her time entry and the company is shocked"/>
+
+“No”, says the man in the Board. “It belongs to the company”. If I’m a company, and I run some kind of reporting, I must rely on the fact that hours logged by my employees or subcontractors won’t change in the future.
+
+Unless they have to change e.g. due to client requests (“can you please book those 13 hours from December in January?”).
+
+Should I be able to change those timesheets as I please or rather ask the person who tracked this time?
+
+What if that person is on vacation and I need to update timesheets now or face delays in payment?
+
+Following scenarios were explored:
+- Company owns it fully
+- Time entries are duplicated for both, the individual and the company (leads to discrepancy)
+- Time entries are immutable after exporting a timesheet
+- Both own the same data and can modify it at any time (leads to surprises)
+
+At the time of writing, we are implementing the last scenario.
+
+Reason number one being simplicity. The simpler logic, the less code, the easier it is to change in the future. Besides, we just don’t know quite yet. And we believe that the correct answer will appear once we all happily use the feature.
+
+## Continue entry
+All you ever do is continue your work from yesterday. If you’re using excel to track your time, you simply copy paste your last entry. If you’re using a time tracking app, well, there are many possibilities:
+- Type the same description in
+- Copy the description from your last entry
+- Click a continue button on your last entry
+
+There’s autocomplete to help out with the manual typing. But it’s still unnecessarily complicated. In the List View you are two clicks away from continuing your last entry. Maybe it should be only one? Who knows.
+
+<MyImg src={require("./list-view-continue.png").default}
+       alt="In the list view, you are two clicks away to continue where you left off"
+       title="In the list view, you are two clicks away to continue where you left off"/>
+
+But the widget view - the one I spend most of my time with - has no such button. Again, we had a few ideas in mind:
+- Add a “continue” button in the details modal
+- A “continue” button directly on the time entry box
+- Right click context menu with a “continue” button
+
+<MyImg src={require("./quick-actions.png").default} alt="A 'continue' button could be located here."
+       title="A 'continue' button could be located here."/>
+
+First idea is so obvious and easy. But it’s two clicks. I wanted to reduce it to one click.
+
+The “continue” button blending in when the pointer is hovering over the box. That’s one click and it works well when you have a mouse. But how to pull this off on an iPad?
+
+<MyImg src={require("./a-button-underneath-time-entry.png").default}
+       alt="A floating ‘continue’ button appears when you hover the box. Doesn’t work on an iPad."
+       title="A floating ‘continue’ button appears when you hover the box. Doesn’t work on an iPad."/>
+
+I didn’t think much about a right-click-context-menu, because I was blessed with a glorious idea: **gestures**.
+
+And it works on iPad.
+<center>
+    <video autoPlay loop title="interactjs.io offers a simple interface to implement drag and drop">
+        <source src="/dragging-left-right2.mp4"/>
+    </video>
+</center>
+
+We already had the dragging function, which allowed us to move a time entry on the time axis (left and right). But would it work to drag it up and down?
+
+The idea is to use the well-known gesture of your thumb moving up the screen. Like you’re browsing your favourite instagram or twitter feed. The tracker is up top, so dragging your time box up to start it kinda feels intuitive.
+
+<center>
+    <video autoPlay loop title="interactjs.io offers a simple interface to implement drag and drop">
+        <source src="/dragging-up.mp4"/>
+    </video>
+</center>
+
+
+And it’s live too, so go check it out [sheetty.com](https://sheetty.com)
+## Next up
+Organisations are managed by a single person. Anyone can have an organisation. This part is fairly easy, although comes with own questions:
+- Are clients of my organisation my personal clients too?
+- Should I be automatically a member of all teams?
+- Can I track time if I’m not part of any team?
+
+Difficult questions are best answered as late as possible. So we tried to find the simplest answers (not best answers, just simplest) and move on. Sooner or later we’ll understand our requirements better.
+
+Team members need to know what teams they are on. They need to know what clients they can track time for. And this is the next challenge.
+
+## Conclusion
+
+Programming is simple. The hardest part is stitching together requirements from different people (or roles, or stakeholders).
+
+What we learned this week is important and not so obvious: just do it. Don’t overthink, settle for less and then iterate. Revisions of your features will help you to improve quickly.
+
+Thank you for reading!
+
+But don’t just read. Try it out now. It only takes 1 minute: [sheetty.com](https://sheetty.com)
