@@ -3,13 +3,15 @@ import React from 'react';
 function MyImg(props) {
     if (props.title !== undefined) {
         return (
-            <figure>
-                <center>
+            <center>
+                <figure>
+
                     <img src={props.src} alt={props.alt}/>
                     <figcaption style={{textAlign: "center"}}>{props.title}</figcaption>
-                </center>
+                </figure>
 
-            </figure>
+            </center>
+
         );
     } else {
         return <img src={props.src} alt={props.alt}/>;
