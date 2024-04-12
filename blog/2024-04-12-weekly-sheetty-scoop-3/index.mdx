@@ -1,0 +1,96 @@
+---
+title: "Weekly Sheetty Scoop🍦 #3"
+authors: gglazewskigran
+tags: [weekly]
+enableComments: true
+---
+
+import MyImg from '@site/src/components/MyImg';
+
+Bon dia! Com estàs? It’s been long two weeks. There was no post last Friday, because I was in Mallorca and I saw chickens.
+
+But this week, we are back with another issue número tres. A lot was done, but even more still lies ahead. As usual, we added some QoL and pushed Teams closer towards completion.
+
+Let’s roll 🎲👉!
+
+
+
+![Weekly Sheetty Scoop #3](./image7.png "Weekly Sheetty Scoop #3")
+
+<!--truncate-->
+
+<MyImg src={require("./image2.jpg").default} alt="A chicken in the field"
+       title="A mallorcan chicken."/>
+
+## Goals
+
+You should know something. Every story is a journey of a protagonist towards their goals. And our story ain’t different.
+
+So what’s the goal?
+
+Sheetty, the time tracking app we are building, is actively used by two people: the co-owner (Dusan) and myself (Greg).
+
+Our goal for 2024 is to have one more user that's willing to actually use the app, report bugs and effectively co-create the experience (we even have a [discord server](https://discord.gg/Pw7TArdx)).
+
+Now that we are a little closer, even more intimate, let’s move on to the actual fun.
+
+## Teams
+
+EXTREME OVERHAUL. All right, maybe not so much. But we optimised the layout of the time tracking widget. I believe it’s now more intuitive: summaries and periods on the left side, actions on the right side.
+
+<MyImg src={require("./image5.png").default} alt="Reorganisation of buttons and information"
+       title="Summaries and periods on the left side and actions on the right side"/>
+
+The biggest addition by far is the Teams Overview. You’ll find a switch button that toggles between your personal and the team view.
+
+<MyImg src={require("./image8.png").default} alt="The personal view of tracked time."
+       title="Personal"/>
+
+<MyImg src={require("./image4.png").default} alt="The teams view of tracked time."
+       title="Teams"/>
+
+And, of course, you can export all logged time into one timesheet:
+
+<MyImg src={require("./image1.png").default} alt="Exported timesheet for the whole team"
+       title=""/>
+
+A new column (“Who”) will be created. Same works for CSV, naturally.
+
+There are many things we could do for the team’s overview. We are discussing colour coding users and/or let them upload an avatar (Dusan already finished the BE part), so that it’s easier to distinguish people in your team.
+
+Some questions are still unanswered. If you remove me from your team, I’ll lose access to all the time I tracked. This is not a problem for an employee, but may be a show stopper for a contractor.
+
+The system gets more complicated with each update.
+
+## QoL
+
+Your clients often have their own tracking tool. It’s not uncommon for freelancers to use more than one tool to track time. Because you want to own the data (e.g. invoicing, statistics etc.) and because you need to comply with your client (which wants to own the data too).
+
+And we have this exact problem. One of our clients expects to use their tracking tool (which I already used aeons ago and it haven’t changed much since then):
+
+<MyImg src={require("./image6.png").default} alt="Client's time tracking system."
+       title="You have to copy your data into your client's system"/>
+
+It’s very cumbersome to copy each description, or even worse: type it by hand. How would you solve this problem? (does this sound like an interview question?)
+
+<MyImg src={require("./image3.png").default} alt="Your tracked time can be copied with one click."
+       title="There is a button that copies all that"/>
+
+A magic button was added. With a simple function of copying UNIQUE descriptions into a simple bullet list:
+- test1
+- something
+- else
+- badum bada
+
+Now, copying work from one tool to another is a breeze.
+
+## What’s Next?
+
+Your subscription has expired. Currently you loose access to all functionalities and only are allowed to extend your subscription.
+
+You'll be switched into a read-only mode instead! Means, you'll keep access to data and can always export it.
+
+Thank you for reading!
+
+But don’t just read. Try it out now. It only takes 1 minute: [sheetty.com](https://sheetty.com)
+And with a 90 day trial, you can’t go wrong.
