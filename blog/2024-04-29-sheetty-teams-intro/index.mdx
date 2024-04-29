@@ -1,0 +1,120 @@
+---
+title: "Sheetty Teams Intro"
+authors: dodalovicgran
+tags: [sheetty]
+enableComments: true
+---
+
+import MyImg from '@site/src/components/MyImg';
+
+For all of you who already signed up for Sheetty, you may have spotted a new menu item:
+
+<MyImg src={require("./new-menu-icon.png").default} alt="New Sheetty Teams Menu Item"
+       title="New Sheetty Teams Menu Item" width={200}/>
+
+What’s this little thing, you may be wondering? This is your entrance to a magic world of Teams.
+
+<MyImg src={require("./org-owner-chilling.png").default} alt="Organization Owner With a Team"
+       title="Organization Owner With a Team" width={600}/>
+
+<!--truncate-->
+
+## Who should care
+
+Well, small teams should. People who work and track time as a small group. As a Team.
+
+<MyImg src={require("./daltons-organization.png").default} alt="Daltons Organization"
+       title="Daltons Organization" width={600}/>
+
+To have better transparency over time spent on software development projects, companies need to track time spent on different tasks, by individual team members. This all leads to better decision-making.
+
+For example, at GRAN, a team of two people (Hi, Greg 👋) works on the Sheetty project. Back then, two of us worked together on a project for our client, where we had to submit a single monthly timesheet to our customer containing time entries both tracked. Similarly, we are working now on Sheety itself, where we would like to know how much time we spend on different tasks combined or individually.
+
+As we stopped using our previous tool of choice - Clockify, we decided to work on a new Sheetty module, which would allow us to address such issues.
+
+Are you curious to hear more about our new, Teams feature? What have we come up with so far?  How does it work? Let's dive in.
+
+## Organizations
+
+Organizations are used to group collaborators together. Each organization has an organization owner, who can invite others to join her/his organization to work together and track time on various clients and their projects.
+
+<MyImg src={require("./my-organization.png").default} alt="My Organization"
+       title="My Organization"/>
+
+Who can be an organization owner? Every Sheetty user can create and therefore own an organization and invite others to join.
+
+<MyImg src={require("./org-owner.png").default} alt="Organization Owner"
+       title="Organization Owner" width={400}/>
+
+As a Sheetty user, you can own an organization. Once you create an organization, you can invite others as you can see in the screenshot below:
+
+<MyImg src={require("./inviting-lebron-james.png").default} alt="Inviting Lebron James"
+       title="Inviting Lebron James"/>
+
+Once an organization is created, its owner can invite others to collaborate. The invitees are either existing or new Sheetty users. If a user, who doesn’t have an account, is invited to collaborate, (s)he will have a status of Teams membership. This means that they are not in the Trial membership of 90 days (this is what happens when you sign up regularly, without being invited), but rather just being on the platform transiently, as long as the project needs them. For such users, once the project is finished, a read-only mode for the time they tracked is available.
+
+Such users can, of course, start their trial.
+
+There’s a little caveat, though: at the time being, each organization can have up to 3 seats, meaning up to 3 team members that can collaborate. We will work on providing the support to manage the number of seats your organization needs. However, if this is an issue for your organization, email us at hello@gransoftware.de and we can provide you with more seats.
+
+Once an organization owner invites someone to collaborate with, the invitee will get an email with a link to confirm the invitation. Once the invitation is confirmed, The person who joined the organization can be assigned to а team. This brings us to the next important concept: Teams.
+
+## Teams
+
+Organizations, on their own, aren’t that interesting unless we start creating Teams. Each organization can have one or more Teams.
+
+<MyImg src={require("./team-at-work.png").default} alt="Weird, AI-generated image of a dude hindering his team, instead of helping out"
+       title="Weird, AI-generated image of a dude hindering his team, instead of helping out"/>
+
+After creating an organization and a team, an owner defines a client, which can be assigned to one or more teams.
+
+
+The only remaining thing is to assign organization members to teams.
+
+With an organization, client, and team(s) being created, team members can start tracking time. If finer-grained control is needed, Sheetty allows individual projects to be assigned to the team.
+
+An example of how this could look can be seen in the image below:
+
+<MyImg src={require("./clients-and-projects.png").default} alt="Assigning clients and projects to a team" title="Assigning clients and projects to a team"/>
+
+In the image above you can see that a team got a Private client assigned, as well as a Sheetty project for a GRAN client. GRAN client has more than just the Sheetty project, however, the others aren’t shared with the team, and they won’t be available to the team members (they won’t see them in the Project dropdown next to time entries.
+
+Projects are optional. If no projects are defined for a client, and if this client gets assigned to a team,  the team members can still track time against this client.
+
+This model is very flexible and it allows an organization owner to properly define teams, team members, and the clients and or projects assigned to those teams.
+
+There is no *roles* concept in Teams per se, but this is on our to-do radar. Pretty much, there’s only an owner and one or more collaborators.
+
+## Team Timeline View
+
+If you are an organization owner, at the right top there is a toggle to switch to Team Timeline View.
+
+<MyImg src={require("./team-timeline-view.png").default} alt="Team Timeline View" title="Team Timeline View"/>
+
+If you toggle it to the team mode, you will be able to see all the contributions for all team members, for each day. This is great for tracking the total time spent for the day (see 36:12 above), as well as work being done individually, for all team members. An organization owner can get both high-level and detailed info on how the work progresses.
+
+## TImesheet export
+
+<MyImg src={require("./timesheet-export.png").default} alt="Team Timesheet Export" title="Team Timesheet Export"/>
+
+The timesheet export page also got a toggler added at the top, where you, as an organization owner can export the time for yourself or your team. This “group” timesheet is needed for those situations where your client asks you to submit a single, combined timesheet for all team members.
+
+<MyImg src={require("./ai-timesheet-approval.png").default} alt="Image of a client approving weird-looking timesheets with some dots. AI-generated crap" title="Image of a client approving weird-looking timesheets with some dots. AI-generated crap" width={600}/>
+
+In case that’s not the case, you can always toggle to individual mode and export timesheets individually.
+
+Only organization owners can see this toggle.
+
+## Client switcher
+
+TODO ask Greg to take a screenshot of his clients switcher (as he was invited to GRAN team
+
+## Conclusion
+
+This is how our Teams look right now. It is good enough for us at GRAN. We plan to make it more robust in the future (e.g. roles).
+
+We would be so happy if you decided to register yourself and invite your peers.
+
+Let us know how Teams can be improved by using the bottom right corner Feedback button. Or email us at hello@gransoftware.de.
+Thanks for reading. I wish you a lovely day.
+
