@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkblog=self.webpackChunkblog||[]).push([[4572],{8821:e=>{e.exports=JSON.parse('{"label":"technical debt","permalink":"/tags/technical-debt","allTagsPath":"/tags","count":1}')}}]);

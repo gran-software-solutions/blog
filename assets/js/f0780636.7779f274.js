@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkblog=self.webpackChunkblog||[]).push([[3065],{3349:a=>{a.exports=JSON.parse('{"label":"REST API","permalink":"/tags/rest-api","allTagsPath":"/tags","count":3}')}}]);
