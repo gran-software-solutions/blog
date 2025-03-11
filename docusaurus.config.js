@@ -105,7 +105,7 @@ const config = {
                             },
                             {
                                 label: 'Time Tracking Tool',
-                                to: 'https://sheetty.com'
+                                to: 'https://consultingcockpit.com'
                             }
                         ]
                     },
