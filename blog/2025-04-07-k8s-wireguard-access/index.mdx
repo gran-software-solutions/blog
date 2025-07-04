@@ -1,0 +1,260 @@
+---
+title: "Beyond SSH Tunnels: Secure K8s Access with WireGuard & Ansible"
+authors: gglazewskigran
+tags: [ansible, k8s, wireguard, security, devops]
+enableComments: true
+---
+
+import MyImg from '@site/src/components/MyImg';
+
+<MyImg src={require("./orcs.jpeg").default} alt="A digital painting in a retro 80s style depicting a horde of orcs in ushankas and orange armor laying siege to a formidable white castle under a dark, stormy sky."
+       title="Even the most secure fortress can face an unexpected horde"/>
+
+Directly accessing Kubernetes services from outside the cluster can be a security and convenience nightmare. Tedious `port-forward` commands and exposed proxies are risky. This post details how I built a better solution: a secure, automated VPN tunnel into my cluster using WireGuard and Ansible, giving me direct, private network access to my K3s cluster.
+<!--truncate-->
+
+## The "Why": My Motivations
+
+My journey began after hardening our servers per CIS Benchmarks, a standard security practice. This had an immediate side effect: my usual method of creating an **SSH tunnel** to use `kubectl` was disabled.
+
+This was a blessing in disguise. Relying on any kind of forwarded port is a security risk, as it can potentially allow traceless horizontal attacks across your cluster if a developer's machine is compromised. I needed a better, more secure, and more robust way forward.
+
+WireGuard was the obvious choice—it's the modern, fast, and secure de-facto standard for Kubernetes networking, using state-of-the-art cryptography. To make the entire setup repeatable and error-proof, I turned to Ansible for complete automation.
+
+## The "How": The Architecture and Setup
+
+The architecture is simple: a WireGuard peer runs as a VPN server directly on our Kubernetes node (in this case, a VPS running K3s). Our client machines (laptops, etc.) connect to this peer, effectively joining the cluster's private network.
+
+### Prerequisites
+
+* A running Kubernetes cluster (this guide uses K3s on a VPS).
+* `kubectl` access to that cluster.
+* Ansible installed on your control machine.
+* A basic grasp of WireGuard concepts (Peers, Public/Private Keys).
+
+### The Core Components: Templates and Variables
+
+Before diving into the playbook, let's look at the two key templates it uses.
+
+**1. The Server Configuration Template (`wg0.conf.j2`)**
+
+This is a Jinja2 template that Ansible uses to generate the server's final `/etc/wireguard/wg0.conf` file. Its power comes from the `for` loop, which dynamically adds a `[Peer]` block for every client defined in an Ansible variable.
+
+```jinja
+[Interface]
+Address = {{ wireguard_server_ip }}/24
+ListenPort = {{ wireguard_server_port }}
+PrivateKey = PLACEHOLDER
+
+{% for client in wireguard_clients %}
+[Peer]
+# {{ client.name }}
+PublicKey = {{ client.public_key }}
+AllowedIPs = {{ client.ip }}/32
+{% endfor %}
+```
+
+You would define the `wireguard_clients` variable in your Ansible inventory (e.g., in `group_vars/all.yml`) like this:
+
+```yaml
+wireguard_clients:
+  - name: my_laptop
+    public_key: "PASTE_LAPTOP_PUBLIC_KEY_HERE"
+    ip: "10.0.0.2"
+  - name: my_phone
+    public_key: "PASTE_PHONE_PUBLIC_KEY_HERE"
+    ip: "10.0.0.3"
+```
+
+**2. The Client Template (`wg-client-template.conf`)**
+
+This file lives on your local machine where you run Ansible. It's a generic client config with placeholders. Ansible will automatically fill in the server's `PublicKey` and `Endpoint` details.
+
+```ini
+[Interface]
+PrivateKey = {{CLIENT_PRIVATE_KEY}}
+Address = {{CLIENT_IP}}
+
+[Peer]
+PublicKey = {{PUBLIC_KEY}}
+Endpoint = {{ENDPOINT}}
+AllowedIPs = 10.0.0.0/24
+PersistentKeepalive = 25
+```
+
+### Step 1 & 2: The Server Setup & Ansible Automation
+
+Our Ansible role, `wireguard`, automates the entire server configuration.
+
+Here is the main task file:
+
+```yaml
+# ansible/wireguard/tasks/main.yaml
+
+- name: Ensure WireGuard tools are installed
+  ansible.builtin.package:
+    name: wireguard-tools
+    state: present
+
+- name: Ensure UFW is installed
+  ansible.builtin.package:
+    name: ufw
+    state: present
+
+- name: Create WireGuard config directory
+  ansible.builtin.file:
+    path: /etc/wireguard
+    state: directory
+    mode: '0700'
+
+- name: Check for existing private key
+  ansible.builtin.stat:
+    path: /etc/wireguard/private_key
+  register: private_key_stat
+
+- name: Generate WireGuard keys on server
+  ansible.builtin.shell:
+    cmd: umask 077 && wg genkey > /etc/wireguard/private_key && wg pubkey < /etc/wireguard/private_key > /etc/wireguard/public_key
+    creates: /etc/wireguard/private_key
+  when: not private_key_stat.stat.exists
+
+- name: Slurp WireGuard public key from remote server
+  ansible.builtin.slurp:
+    src: /etc/wireguard/public_key
+  register: wireguard_public_key_b64
+
+- name: Insert server public key into the client template
+  ansible.builtin.lineinfile:
+    path: "/project/wg-client-template.conf"
+    regexp: '^PublicKey = .*$'
+    line: "PublicKey = {{ wireguard_public_key_b64['content'] | b64decode }}"
+    mode: '0644'
+  delegate_to: localhost
+  run_once: true
+  become: no
+
+- name: Insert server endpoint into the client template
+  ansible.builtin.lineinfile:
+    path: "/project/wg-client-template.conf"
+    regexp: '^Endpoint = .*$'
+    line: "Endpoint = {{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}:{{ wireguard_server_port }}"
+    mode: '0644'
+  delegate_to: localhost
+  run_once: true
+  become: no
+
+- name: Configure WireGuard interface from template
+  ansible.builtin.template:
+    src: wg0.conf.j2
+    dest: /etc/wireguard/wg0.conf
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Read private key from server file
+  ansible.builtin.command: cat /etc/wireguard/private_key
+  register: private_key_content
+  changed_when: false
+  check_mode: no
+  no_log: true
+
+- name: Insert private key into WireGuard config
+  ansible.builtin.lineinfile:
+    path: /etc/wireguard/wg0.conf
+    line: "PrivateKey = {{ private_key_content.stdout }}"
+    regexp: '^PrivateKey = PLACEHOLDER$'
+    state: present
+  no_log: true
+  notify: restart wireguard
+
+- name: Allow WireGuard port through UFW
+  community.general.ufw:
+    rule: allow
+    port: "{{ wireguard_server_port }}"
+    proto: udp
+  notify: reload ufw
+
+- name: Enable IP forwarding in UFW
+  ansible.builtin.lineinfile:
+    path: /etc/default/ufw
+    regexp: '^DEFAULT_FORWARD_POLICY='
+    line: 'DEFAULT_FORWARD_POLICY="ACCEPT"'
+  notify: reload ufw
+
+- name: Add UFW Postrouting rule for NAT
+  ansible.builtin.blockinfile:
+    path: /etc/ufw/before.rules
+    block: |
+      # START WIREGUARD RULES
+      *nat
+      :POSTROUTING ACCEPT [0:0]
+      -A POSTROUTING -s {{ wireguard_server_ip }}/24 -o {{ ansible_default_ipv4.interface }} -j MASQUERADE
+      COMMIT
+      # END WIREGUARD RULES
+    marker: "# {mark} ANSIBLE MANAGED BLOCK for WireGuard NAT"
+  notify: reload ufw
+
+- name: Allow K3s API port through UFW from WireGuard network
+  community.general.ufw:
+    rule: allow
+    port: '6443'
+    proto: tcp
+    from_ip: "{{ wireguard_server_ip }}/24"
+  notify: reload ufw
+
+- name: Ensure WireGuard service is enabled and started
+  ansible.builtin.service:
+    name: wg-quick@wg0
+    enabled: true
+    state: started
+```
+
+### Step 3: Configuring a New Client (The Full Workflow)
+
+Here is the complete process to add a new client (e.g., your laptop) to the VPN.
+
+1.  **Generate Client Keys:** On your local machine, generate a new key pair.
+
+    ```bash
+    wg genkey | tee my_laptop_private.key | wg pubkey > my_laptop_public.key
+    ```
+
+    Keep the private key safe! You'll need it in a moment.
+
+2.  **Update Ansible Variables:** Copy the contents of `my_laptop_public.key`. Now, open your Ansible `wireguard_clients` variable list and add a new entry for your device.
+
+    ```yaml
+    wireguard_clients:
+      - name: my_laptop
+        public_key: "COPIED_PUBLIC_KEY_GOES_HERE"
+        ip: "10.0.0.2"
+      # ... other clients
+    ```
+
+3.  **Run the Playbook:** Execute your Ansible playbook. This will update the server's `/etc/wireguard/wg0.conf` file, adding your new laptop as a peer. It will also update your local `wg-client-template.conf` with the correct server info.
+
+4.  **Create Your Final Client Config:**
+
+    * Open the now-updated `wg-client-template.conf`.
+    * Copy the private key from `my_laptop_private.key` and paste it over the `{{CLIENT_PRIVATE_KEY}}` placeholder.
+    * Replace `{{CLIENT_IP}}` with the same IP you used in the variable list (`10.0.0.2`).
+    * Save this final file as `wg0.conf` on your laptop (e.g., in `/etc/wireguard/`).
+
+5.  **Connect:** Activate the tunnel using the WireGuard client on your OS (e.g., `wg-quick up wg0`). You're in!
+
+### The "Aha!" Moment: Using the Connection
+
+Once the tunnel is active, you can access your cluster resources as if you were on the same local network. To confirm that `kubectl` can now see the cluster through the tunnel, you can run a simple command. Pointing `kubectl` directly to your server's WireGuard IP (e.g., `10.0.0.1`, as defined in your `wg0.conf.j2`) should now work perfectly.
+
+```bash
+# Test kubectl access through the tunnel, replacing with your server's WG IP
+kubectl --server [https://10.0.0.1:6443](https://10.0.0.1:6443) get all --all-namespaces
+```
+
+You can even access services by their internal ClusterIP. For instance, `curl http://10.43.0.15` will just work.
+
+More importantly, you can now permanently configure your `~/.kube/config` file to point directly to the internal Kubernetes API server address (`https://10.0.0.1:6443`), removing any need for the API server to be exposed to the public internet.
+
+### Conclusion
+
+By combining WireGuard and Ansible, we've created a robust, secure, and easy-to-manage way to access our Kubernetes resources. It's faster and more flexible than clunky SSH tunnels and more modern than older VPN solutions. The best part is that the entire process is automated, making it repeatable, reliable, and trivial to onboard new developers or devices.
