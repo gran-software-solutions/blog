@@ -92,6 +92,10 @@ const config = {
                         title: 'GRAN',
                         items: [
                             {
+                                label: 'Privacy Policy',
+                                to: 'https://www.gransoftware.de/privacy-policy'
+                            },
+                            {
                                 label: 'Website',
                                 to: 'https://www.gransoftware.de'
                             },
@@ -101,7 +105,7 @@ const config = {
                             },
                             {
                                 label: 'Discord',
-                                to: 'https://discord.gg/2uYKcWG9'
+                                to: 'https://discord.com/invite/fJUENZh5y4'
                             },
                             {
                                 label: 'Time Tracking Tool',
