@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@docusaurus/core": "^2.4.0",
-    "@docusaurus/plugin-sitemap": "^2.4.3",
+    "@docusaurus/plugin-sitemap": "^2.4.0",
     "@docusaurus/preset-classic": "^2.4.0",
     "@docusaurus/theme-mermaid": "^2.4.0",
     "@easyops-cn/docusaurus-search-local": "^0.35.0",
@@ -47,5 +47,8 @@
   },
   "engines": {
     "node": ">=16.14"
+  },
+  "overrides": {
+    "cheerio": "1.0.0-rc.10"
   }
 }
