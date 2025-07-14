@@ -1,0 +1,374 @@
+---
+title: "Automating Production Postgres on Kubernetes: A PGO and Ansible IaC Pattern"
+authors: gglazewskigran
+tags: [k8s, ansible, postgresql, devops]
+enableComments: true
+---
+
+import MyImg from '@site/src/components/MyImg';
+
+<MyImg src={require("./arms.jpeg").default} alt="AA robotic arm in an 80s sci-fi style installing server equipment into a rack within a modern data center."
+       title="The future of IT infrastructure built with automation"/>
+
+This guide details a production-grade, Infrastructure as Code (IaC) pattern for deploying the Crunchy Data Postgres Operator (PGO) on Kubernetes with Ansible. It's designed for experienced engineers managing their own infrastructure on platforms like K3s, not for those using managed cloud database services like RDS or Cloud SQL.
+
+By wrapping PGO's Helm chart and cluster definitions in Ansible, you create a version-controlled, repeatable, and automated system. By the end, you will have a complete playbook that deploys PGO and provisions a Postgres cluster with production-ready, S3-backed backups.
+<!--truncate-->
+
+## Prerequisites
+
+This guide assumes you are comfortable with the following:
+
+* **Ansible:** Playbook structure, variables, and the `kubernetes.core.helm` and `kubernetes.core.k8s` modules.
+* **Kubernetes:** A running cluster (K3s is our target), Namespaces, Secrets, CRDs, and PVCs.
+* **Helm & PGO:** Basic familiarity with managing Helm charts and the purpose of a Postgres Operator.
+
+## Section 1: Why Ansible for PGO Management?
+
+While `helm` and `kubectl` are effective, wrapping them in Ansible provides a declarative, auditable, and integrated system for production.
+
+1.  **Single Source of Truth:** The playbook becomes the canonical definition of your Postgres setup, eliminating configuration drift and ensuring consistency across all environments.
+2.  **Orchestrate Dependencies:** Codify the entire workflow in a single run: create namespaces, provision S3 secrets, install the operator, and then deploy the cluster. This avoids manual sequencing errors.
+3.  **Manage Secrets Securely:** Use Ansible's power to fetch, process, and inject secrets from external sources (like a cloud secret manager) directly into Kubernetes, leveraging features like `no_log` and Ansible Vault.
+4.  **Control the Full Lifecycle:** The same playbook manages creation, upgrades, and configuration changes. Conditional logic allows you to handle different operational scenarios like disaster recovery from the same code base.
+
+In short, Ansible elevates your deployment from a series of manual commands to a coherent, version-controlled system. This not only ensures consistency but also dramatically lowers your Recovery Time Objective (RTO) by turning complex disaster recovery procedures into a single, reliable command.
+
+## Section 2: Ansible Project Structure
+
+A logical project structure is essential for maintainability. We recommend organizing your files as follows. This separates concerns and makes the project easy to navigate.
+
+```
+ansible_pgo/
+├── inventory/
+│   └── hosts.ini
+├── tasks/
+│   ├── 01_db_namespace.yaml
+│   ├── 02_pgbackrest_secret.yaml
+│   ├── 03_pgo_install.yaml
+│   ├── 04_init_db.yaml
+│   └── 05_restore_db.yaml
+├── production_vault.yaml
+└── software.yaml
+```
+
+* `software.yaml`: The entrypoint playbook that orchestrates the entire deployment by including tasks in the correct order.
+* `inventory/`: Defines your target hosts and groups for different environments (e.g., development, production).
+* `tasks/`: Contains the individual YAML files, each responsible for a specific, reusable action.
+* `*_vault.yaml`: Your environment-specific, encrypted variable files for storing sensitive data like API keys and passwords, managed with Ansible Vault.
+
+## Section 3: The Playbook - Laying the Groundwork & Installing PGO
+
+The deployment is sequenced carefully. We first create the necessary Kubernetes resources—the namespace for the database and the secret for S3 backups—before installing the PGO operator itself. This ensures all dependencies are met.
+
+Throughout the following tasks, you will see the `kubeconfig: "{{ k3s_kubeconfig_path }}"` parameter. This variable specifies the path on the target server to the `kubeconfig` file needed to authenticate with the Kubernetes API. For a standard K3s installation, this value is typically `/etc/rancher/k3s/k3s.yaml`.
+
+### 1. Create the Database Namespace
+
+First, we ensure a dedicated namespace exists for our Postgres clusters. Note the use of `wait: true`, which is crucial in an automated workflow to guarantee the namespace is created before Ansible proceeds to the next task.
+
+```yaml
+# tasks/01_db_namespace.yaml
+- name: Create the database namespace
+  kubernetes.core.k8s:
+    wait: true
+    kubeconfig: "{{ k3s_kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: database
+```
+
+### 2. Create the pgBackRest S3 Secret
+
+Next, we create the secret that PGO will use to connect to an S3-compatible object store for backups. This task is a prime example of Ansible's power: it runs a shell command to fetch a key from an external service.
+
+This task uses `delegate_to: localhost`, which means **the command to fetch the secret runs on your Ansible control node, not on the Kubernetes server**. While this example uses the Scaleway CLI (`scw`), the principle applies to any cloud provider. You would simply substitute the command with the equivalent for your provider (e.g., `aws` or `gcloud`). Crucially, this requires you to have the appropriate CLI tool installed and configured on the machine where you run your playbook.
+
+We recommend using a common Ansible Execution Environment. Let me know if you want a nice tutorial on it too :)
+
+```yaml
+# tasks/02_pgbackrest_secret.yaml
+- name: Fetch pgBackRest encryption key from Scaleway Secret Manager
+  ansible.builtin.shell:
+    cmd: scw secret version access {{ pgbackrest_repo1_cipher_secret_id }} revision=1 -o json | jq -r .data
+  environment:
+    SCW_ACCESS_KEY: "{{ AWS_ACCESS_KEY_ID }}"
+    SCW_SECRET_KEY: "{{ AWS_SECRET_ACCESS_KEY }}"
+    SCW_DEFAULT_ORGANIZATION_ID: "{{ scaleway_organization_id }}"
+    SCW_DEFAULT_REGION: "{{ scaleway_region }}"
+  register: pgbackrest_repo1_cipher_pass_raw
+  changed_when: false
+  delegate_to: localhost
+  become: false # default user is "runner" and that's where scw is installed, so I don't want this to run as sudo
+  no_log: true
+
+- name: Create S3 credentials secret for pgBackRest
+  kubernetes.core.k8s:
+    kubeconfig: "{{ k3s_kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: pgo-s3-creds
+        namespace: database
+      type: Opaque
+      stringData:
+        s3.conf: |
+          [global]
+          repo1-s3-key={{ AWS_ACCESS_KEY_ID }}
+          repo1-s3-key-secret={{ AWS_SECRET_ACCESS_KEY }}
+          repo1-cipher-type=aes-256-cbc
+          repo1-cipher-pass={{ pgbackrest_repo1_cipher_pass_raw.stdout | trim | b64decode }}
+          repo1-retention-full=4
+```
+
+A common mistake is creating this secret in the wrong namespace. The `pgo-s3-creds` secret must exist in the **same namespace where your `PostgresCluster` will be created** (`database`), not in the `postgres-operator` namespace.
+
+Two critical production-ready settings are defined here:
+
+* **Backup Encryption:** `repo1-cipher-pass` ensures backups are encrypted at rest in S3.
+* **Backup Retention:** `repo1-retention-full=4` tells `pgbackrest` to keep the 4 most recent full backups, managing storage costs.
+
+### 3. Install the PGO Operator
+
+With the prerequisites in place, we install PGO using the `kubernetes.core.helm` module. We pin the `chart_version` for repeatable builds and use `wait: true` to ensure the Helm release is fully deployed.
+
+```yaml
+# tasks/03_pgo_install.yaml
+- name: Install Crunchy PGO from Helm chart
+  kubernetes.core.helm:
+    name: pgo
+    chart_ref: oci://[registry.developers.crunchydata.com/crunchydata/pgo](https://registry.developers.crunchydata.com/crunchydata/pgo)
+    chart_version: 5.8.2
+    release_namespace: postgres-operator
+    create_namespace: true
+    state: present
+    kubeconfig: "{{ k3s_kubeconfig_path }}"
+    wait: true
+    wait_timeout: 10m
+    values:
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 512Mi
+        requests:
+          cpu: 100m
+          memory: 256Mi
+```
+
+Note the `chart_ref` format: `oci://...`. This uses an OCI registry, the modern standard for distributing Helm charts, ensuring you pull from the official source.
+
+## Section 4: Provisioning the Postgres Cluster
+
+Now we can define and create our actual Postgres database by applying a `PostgresCluster` custom resource.
+
+```yaml
+# tasks/04_init_db.yaml
+- name: Create an empty PostgresCluster
+  kubernetes.core.k8s:
+    kubeconfig: "{{ k3s_kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: [postgres-operator.crunchydata.com/v1beta1](https://postgres-operator.crunchydata.com/v1beta1)
+      kind: PostgresCluster
+      metadata:
+        name: your-project-db
+        namespace: database
+      spec:
+        postgresVersion: 16
+        instances:
+          - name: instance1
+            replicas: 1 # configure this for your prod env
+            dataVolumeClaimSpec:
+              accessModes:
+                - "ReadWriteOnce"
+              resources:
+                requests:
+                  storage: 5Gi # configure this for your prod env
+        backups:
+          pgbackrest:
+            repos:
+              - name: repo1 #repoN is required naming convention
+                s3:
+                  bucket: "{{ pgo_s3_bucket }}"
+                  endpoint: "{{ pgo_s3_endpoint }}"
+                  region: "{{ pgo_s3_region }}"
+                schedules:
+                  full: "0 1 * * 0"
+                  incremental: "0 1 * * *"
+            configuration:
+              - secret:
+                  name: pgo-s3-creds
+        users:
+          - name: your_project_user
+            databases:
+              - your_project_db
+```
+
+Let's break down the key parts of this `spec`:
+
+* **`postgresVersion: 16`**: Specifies the desired major version of Postgres.
+* **`instances`**: Defines a single primary (`replicas: 1`) with a 5Gi Persistent Volume Claim (PVC).
+* **`backups.pgbackrest.repos`**: Configures the connection to our S3 bucket.
+* **`schedules`**: Defines cron schedules for a full backup (weekly on Sunday) and incremental backups (daily). This, combined with continuous WAL archiving, provides robust Point-in-Time Recovery (PITR). By default, Postgres archives WAL files when they reach 16MB or after 60 seconds, whichever comes first, ensuring minimal data loss.
+* **`users`**: Automatically creates a Postgres role (`your_project_user`) and a database (`your_project_db`). The operator generates a Kubernetes secret named `{cluster-name}-pguser-{user-name}` (e.g., `your-project-db-pguser-your_project_user`) containing the password.
+
+### Accessing the Secret from a Different Namespace
+
+Your application likely runs in a different namespace (e.g., `app-namespace`) and will need permission to read the database secret from the `database` namespace. To grant this access securely, you must create a `ClusterRole` and a `RoleBinding`.
+
+1.  **Create a `ClusterRole`:**
+
+    Notice no namespace defined here as it’s cluster wide.
+
+    ```yaml
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRole
+    metadata:
+      name: secret-reader
+    rules:
+    - apiGroups: [""]
+      resources: ["secrets"]
+      resourceNames: ["your-project-db-pguser-your_project_user"]
+      verbs: ["get"]
+    ```
+
+2.  **Create a `RoleBinding`:**
+
+    RoleBinding is in the same namespace as your database but it can specify a different namespace for its subjects.
+
+    ```yaml
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    metadata:
+      name: read-db-secret-from-app-ns
+      namespace: database
+    subjects:
+    - kind: ServiceAccount
+      name: default # Or your app's service account
+      namespace: app-namespace
+    roleRef:
+      kind: ClusterRole
+      name: secret-reader
+      apiGroup: rbac.authorization.k8s.io
+    ```
+
+## Section 5: The Main Playbook and Disaster Recovery
+
+The `software.yaml` playbook is the conductor. It uses `ansible.builtin.include_tasks` to execute our task files in sequence and includes conditional logic for disaster recovery.
+
+```yaml
+# software.yaml
+- name: Deploy PGO and Postgres Cluster
+  hosts: all
+  become: true
+  vars_files:
+    - ../{{ stage }}_vault.yaml # e.g. production_vault.yaml
+  vars:
+    k3s_kubeconfig_path: /etc/rancher/k3s/k3s.yaml
+    restore_db: false # Set to true for disaster recovery
+
+  tasks:
+    - name: Ensure database namespace exists
+      ansible.builtin.include_tasks: tasks/01_db_namespace.yaml
+
+    - name: Create pgBackRest S3 secret
+      ansible.builtin.include_tasks: tasks/02_pgbackrest_secret.yaml
+
+    - name: Install PGO operator
+      ansible.builtin.include_tasks: tasks/03_pgo_install.yaml
+
+    - name: Provision initial postgres cluster
+      ansible.builtin.include_tasks: tasks/04_init_db.yaml
+      when: not restore_db | bool
+
+    - name: Restore postgres cluster from backup
+      ansible.builtin.include_tasks: tasks/05_restore_db.yaml
+      when: restore_db | bool
+```
+
+This logic is controlled by the `restore_db` variable. When `false`, it runs `init_db.yaml`. When `true`, it runs `restore_db.yaml` instead.
+
+Here is the task for restoring from a backup:
+
+```yaml
+# tasks/05_restore_db.yaml
+- name: Create a PostgresCluster that restores from backup
+  kubernetes.core.k8s:
+    kubeconfig: "{{ k3s_kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: [postgres-operator.crunchydata.com/v1beta1](https://postgres-operator.crunchydata.com/v1beta1)
+      kind: PostgresCluster
+      metadata:
+        name: your-project-db
+        namespace: database
+      spec:
+        # This section triggers the restore
+        dataSource:
+          pgbackrest:
+            stanza: db
+            repo:
+              name: repo1
+            configuration:
+              - secret:
+                  name: pgo-s3-creds
+            global:
+              repo1-path: /backup/repo1
+        # The rest of the spec is identical to the init_db task
+        # to ensure the restored cluster has the same configuration.
+        postgresVersion: 16
+        instances:
+          - name: instance1
+            replicas: 1
+            dataVolumeClaimSpec:
+              accessModes:
+                - "ReadWriteOnce"
+              resources:
+                requests:
+                  storage: 5Gi
+        backups:
+          pgbackrest:
+            repos:
+              - name: repo1
+                s3:
+                  bucket: "{{ pgo_s3_bucket }}"
+                  endpoint: "{{ pgo_s3_endpoint }}"
+                  region: "{{ pgo_s3_region }}"
+                schedules:
+                  full: "0 1 * * 0"
+                  incremental: "0 1 * * *"
+            configuration:
+              - secret:
+                  name: pgo-s3-creds
+        users:
+          - name: your_project_user
+            databases:
+              - your_project_db
+```
+
+The critical difference is the `spec.dataSource.pgbackrest` section. This instructs PGO to provision a new cluster and then immediately perform a restore from the specified S3 backup repository. This allows you to rebuild your entire database with a single command: `ansible-playbook software.yaml -e "restore_db=true"`.
+
+**If there is nothing to restore, the database will not start.**
+
+This is why you have to init your database first to create the starting point for the recovery.
+
+Fine-tuning the connection between pgBackRest and your S3 may take some time and be tricky. Check logs in your postgres-operator namespace to see what’s going on. If you see error code 37 or 39, it means that the S3 connection didn’t work (anything from wrong keys, secrets, bucket, policies, regions etc).
+
+Debug it by creating stanza manually:
+
+`kubectl exec -n database your-project-db-repo-host-0 -c pgbackrest -- pgbackrest stanza-create --log-level-console=debug`
+
+Be patient. If you configured everything properly, it still will take a while before your cluster is up and running after a recovery (it takes around 3 minutes for me before I see postgres pods up). Watch pods in your namespace to see what’s going on.
+
+**If you init database with a S3 bucket that already contains backups - they will be deleted!**
+
+Make sure to use versioning in your S3 bucket!
+
+## Conclusion
+
+By wrapping the Crunchy Data Postgres Operator in Ansible, you transform a series of manual commands into a robust, version-controlled, and automated system. This pattern provides a single source of truth for your database infrastructure, codifies dependencies, manages secrets securely, and handles the full lifecycle from initial provisioning to disaster recovery. This approach significantly reduces the risk of configuration drift and manual error, providing the reliability required for production workloads on Kubernetes.
