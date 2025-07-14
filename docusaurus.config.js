@@ -93,7 +93,7 @@ const config = {
                         items: [
                             {
                                 label: 'Privacy Policy',
-                                to: 'https://www.gransoftware.de/privacy-policy'
+                                to: 'https://www.consultingcockpit.com/datenschutz/'
                             },
                             {
                                 label: 'Website',
